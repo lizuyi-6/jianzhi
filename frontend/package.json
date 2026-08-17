@@ -11,7 +11,7 @@
     "verify:interactions": "node e2e/interactions.cjs",
     "verify:all": "npm run verify && npm run verify:interactions",
     "verify:prod": "PROD=1 FRONTEND_URL=http://localhost:4173 node e2e/verify.cjs",
-    "release:gate": "npm run build && npm run verify:all"
+    "release:gate": "npm run build && node e2e/release-gate.cjs"
   },
   "dependencies": {
     "react": "^18.3.1",

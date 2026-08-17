@@ -26,7 +26,7 @@ npm run dev        # http://localhost:5173，/api 代理到 localhost:3001
 | / | 问题页：来源信息流 + AI 透镜入口 | 图 1 |
 | 抽屉 | 主要分歧条件 + 你的情况选择 | 图 4 |
 | /reading-set | 先看这几篇：A 可比较经验 / B 反向经验 / C 经典视角 | 图 3 |
-| /read/:role | 阅读视图：原文 + Evidence 高亮 + 为什么这么说面板 | 图 2 |
+| /read/:role | 阅读视图：来源内容 + Evidence 高亮 + 为什么这么说面板 | 图 2 |
 
 ## 产品不变量在前端的落实
 
@@ -57,12 +57,13 @@ npm run verify:all           # 两个套件一起跑
 ### 发布门禁（release gate）
 
 ~~~bash
-npm run build
-npm run preview              # 生产构建预览在 localhost:4173（/api 代理到 3001）
-npm run verify:prod          # 针对生产构建跑 Golden Flow
+npm run release:gate   # 构建 → 自动启动 preview → 对生产构建跑 Golden Flow → 自动收尾
 ~~~
 
-verify:prod 额外断言：生产环境里「看阅读集（dev）」入口数量为 0。
+该命令内部执行 npm run build，随后启动 vite preview（localhost:4173，
+/api 代理到 3001；若已有 preview 在运行则直接复用），并用 PROD=1 跑
+e2e/verify.cjs。PROD 模式额外断言：生产环境里「看阅读集（dev）」
+入口数量严格为 0。verify:prod 仍保留，用于对已运行的 preview 单独复测。
 
 verify 套件断言产品不变量：judge 路径无绕过入口、Golden 三角色齐备、
 Evidence 高亮数与来源依据一一对应、无失效引用、Unknown 文案边界、控制台零错误。

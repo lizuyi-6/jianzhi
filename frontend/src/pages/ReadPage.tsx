@@ -151,7 +151,7 @@ export default function ReadPage() {
             <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2l1.8 5.6L19 9l-5.2 1.4L12 16l-1.8-5.6L5 9l5.2-1.4Z"/></svg>
             为什么这么说？
           </h3>
-          <p className="why-panel-sub">这篇回答为什么值得先读</p>
+          <p className="why-panel-sub">这条来源为什么值得先读</p>
           {card && (
             <div className="why-badges">
               {card.why_read_codes.map((code) => (
