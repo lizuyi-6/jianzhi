@@ -6,6 +6,7 @@ import type { SourceDocument } from '../api/types';
 import { useApp } from '../state/AppContext';
 import { followedTopics, getPrefsVersion, isQuestionFollowed, subscribePrefs, toggleQuestionFollowed, toggleTopic } from '../state/prefs';
 import { showToast } from '../components/Toast';
+import { QUESTION_DESC, QUESTION_TITLE } from '../content';
 import LensCard from '../components/LensCard';
 import LensDrawer from '../components/LensDrawer';
 
@@ -97,11 +98,8 @@ export default function QuestionPage() {
               <button key={t} className="tag tag-btn" type="button" onClick={() => navigate('/search?q=' + encodeURIComponent(t))}>{t}</button>
             ))}
           </div>
-          <h1 className="question-title">本科毕业，应该直接工作还是读研？</h1>
-          <p className="question-desc">
-            有人建议先工作积累经验，也有人说读研能打开更高的上限。本页内容来自知乎官方搜索 API 返回的真实回答与文章片段，
-            知鉴不做统一结论，只帮你找到更值得先读的真人经验。
-          </p>
+          <h1 className="question-title">{QUESTION_TITLE}</h1>
+          <p className="question-desc">{QUESTION_DESC}</p>
           <div className="question-actions">
             <button
               className={followed ? 'btn btn-ghost' : 'btn btn-primary'}
@@ -110,7 +108,9 @@ export default function QuestionPage() {
             >
               {followed ? '已关注问题' : '关注问题'}
             </button>
-            <button className="btn btn-ghost" type="button" onClick={() => navigate('/reading-set')}>看阅读集</button>
+            {import.meta.env.DEV && (
+              <button className="btn btn-ghost" type="button" title="仅开发模式可见" onClick={() => navigate('/reading-set')}>看阅读集（dev）</button>
+            )}
             <span className="question-stat">共 {meta?.source_count ?? '…'} 条来源内容</span>
             <span className="provenance">来源：知乎官方搜索 API</span>
           </div>
@@ -148,7 +148,7 @@ export default function QuestionPage() {
                     <span>{s.platform_signals.comment_count} 条评论</span>
                   )}
                   {date && <span>发布于 {date}</span>}
-                  <a href={s.url} target="_blank" rel="noreferrer" className="feed-origin">原文 ↗</a>
+                  <a href={s.url} target="_blank" rel="noreferrer" className="feed-origin">{s.source_type === 'article' ? '查看原文 ↗' : '查看原回答 ↗'}</a>
                 </div>
               </article>
             );

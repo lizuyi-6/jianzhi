@@ -437,3 +437,10 @@ button { font-family: inherit; cursor: pointer; }
 .list-empty { color: var(--text-3); font-size: 13.5px; }
 
 .collect-btn { margin-left: auto; }
+
+/* ---------- 来源内容标注 ---------- */
+.content-caption {
+  font-size: 12px; color: var(--text-3); background: #f7f8fc;
+  border: 1px dashed var(--border); border-radius: 6px;
+  padding: 5px 10px; margin: 0 0 14px; display: inline-block;
+}

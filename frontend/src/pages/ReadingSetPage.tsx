@@ -6,6 +6,7 @@ import { useApp } from '../state/AppContext';
 import { dimensionLabel, valueLabel, whyReadLabel, warningLabel, ROLE_META } from '../i18n/labels';
 import LensCard from '../components/LensCard';
 import LensDrawer from '../components/LensDrawer';
+import { QUESTION_TITLE } from '../content';
 
 const ROLE_ORDER: Role[] = ['COMPARABLE', 'COUNTER_EXPERIENCE', 'CLASSIC'];
 
@@ -157,7 +158,7 @@ export default function ReadingSetPage() {
     <div className="page-grid">
       <div className="page-main">
         <section className="card question-card">
-          <h1 className="question-title question-title-sm">本科毕业，应该直接工作还是读研？</h1>
+          <h1 className="question-title question-title-sm">{QUESTION_TITLE}</h1>
           <div className="cond-bar">
             <ConditionChips />
             <button className="cond-edit" type="button" onClick={openDrawer}>

@@ -41,7 +41,7 @@ export default function SourcePage() {
   }
 
   if (!source) {
-    return <div className="page-main"><section className="card">正在加载原文…</section></div>;
+    return <div className="page-main"><section className="card">正在加载来源内容…</section></div>;
   }
 
   const collected = collectedIds === 'true';
@@ -61,6 +61,7 @@ export default function SourcePage() {
         </div>
         {typeof votes === 'number' && <p className="read-votes">{votes} 人赞同了该{source.source_type === 'article' ? '文章' : '回答'}</p>}
 
+        <p className="content-caption">来源内容（知乎官方搜索 API 返回的检索片段，不保证是完整回答正文）</p>
         <div className="read-body">{source.text}</div>
 
         <div className="feed-meta read-meta">
@@ -77,7 +78,7 @@ export default function SourcePage() {
           >
             {collected ? '★ 已收藏' : '☆ 收藏'}
           </button>
-          <a href={source.url} target="_blank" rel="noreferrer" className="feed-origin">查看原回答 ↗</a>
+          <a href={source.url} target="_blank" rel="noreferrer" className="feed-origin">{source.source_type === 'article' ? '查看原文 ↗' : '查看原回答 ↗'}</a>
         </div>
         <p className="read-provenance">
           来源：知乎官方搜索 API（{source.source_mode}）

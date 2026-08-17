@@ -75,7 +75,7 @@ export default function SearchPage() {
               {typeof s.platform_signals.comment_count === 'number' && (
                 <span>{s.platform_signals.comment_count} 条评论</span>
               )}
-              <a href={s.url} target="_blank" rel="noreferrer" className="feed-origin">原文 ↗</a>
+              <a href={s.url} target="_blank" rel="noreferrer" className="feed-origin">{s.source_type === 'article' ? '查看原文 ↗' : '查看原回答 ↗'}</a>
             </div>
           </article>
         ))}

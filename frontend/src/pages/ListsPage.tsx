@@ -5,6 +5,7 @@ import {
   removeHistory, subscribePrefs, toggleCollection, toggleQuestionFollowed, toggleTopic,
 } from '../state/prefs';
 import { showToast } from '../components/Toast';
+import { QUESTION_TITLE } from '../content';
 
 function formatTime(t: number): string {
   const d = new Date(t);
@@ -23,7 +24,7 @@ export function FollowsPage() {
         <h3 className="list-subtitle">关注的问题</h3>
         {qf ? (
           <div className="list-row">
-            <Link to="/" className="list-link">本科毕业，应该直接工作还是读研？</Link>
+            <Link to="/" className="list-link">{QUESTION_TITLE}</Link>
             <button className="btn-mini followed" onClick={() => { toggleQuestionFollowed(); showToast('已取消关注问题'); }}>已关注</button>
           </div>
         ) : <p className="list-empty">还没有关注的问题。</p>}

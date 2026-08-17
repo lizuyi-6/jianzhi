@@ -46,8 +46,13 @@ src/i18n/labels.ts 中翻译为中文文案；未知 code 走 humanize 兜底，
 ## 验证
 
 ~~~bash
-npm run build      # tsc -b && vite build
+npm run build                # tsc -b && vite build
+
+# 端到端验证（需先启动 backend dev 与 frontend dev）：
+npm run verify               # Golden Flow：问题页 → 分歧条件抽屉 → 阅读集 → 阅读视图
+npm run verify:interactions  # 交互覆盖：关注/收藏/历史/搜索/分页/通知
+npm run verify:all           # 两个套件一起跑
 ~~~
 
-端到端冒烟脚本（Playwright）：.analysis/frontend-verify/verify.cjs，
-覆盖问题页 → 条件抽屉 → 阅读集 → 阅读视图全链路及 B 空位路径。
+verify 套件断言产品不变量：judge 路径无绕过入口、Golden 三角色齐备、
+Evidence 高亮数与原文依据一一对应、无失效引用、控制台零错误。

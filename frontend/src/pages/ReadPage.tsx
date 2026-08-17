@@ -121,8 +121,9 @@ export default function ReadPage() {
           </div>
           {typeof votes === 'number' && <p className="read-votes">{votes} 人赞同了该{source?.source_type === 'article' ? '文章' : '回答'}</p>}
 
+          <p className="content-caption">来源内容（知乎官方搜索 API 返回的检索片段，不保证是完整回答正文）</p>
           <div className="read-body">
-            {source ? body : <p>正在加载原文…</p>}
+            {source ? body : <p>正在加载来源内容…</p>}
           </div>
 
           <div className="feed-meta read-meta">
@@ -139,7 +140,7 @@ export default function ReadPage() {
               </button>
             )}
           </div>
-          <p className="read-provenance">来源：知乎官方搜索 API（official_api_search） · 高亮与编号为依据原文的 Evidence 引用</p>
+          <p className="read-provenance">来源：知乎官方搜索 API（official_api_search） · 高亮与编号为依据该检索片段的 Evidence 引用</p>
         </section>
         {error && <section className="card inline-error-card">{error.message}（{error.code}）</section>}
       </div>
@@ -213,7 +214,7 @@ export default function ReadPage() {
 
           {card && (
             <a className="why-origin" href={card.url} target="_blank" rel="noreferrer">
-              查看原回答
+              {source?.source_type === 'article' ? '查看原文' : '查看原回答'}
               <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 6 6 6-6 6"/></svg>
             </a>
           )}
