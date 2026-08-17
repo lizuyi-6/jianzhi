@@ -9,3 +9,4 @@ backend/*.log
 frontend/node_modules/
 frontend/dist/
 .analysis/frontend-verify/node_modules/
+frontend/tsconfig.tsbuildinfo
