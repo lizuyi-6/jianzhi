@@ -1,0 +1,9 @@
+.env
+.env.*
+!.env.example
+backend/node_modules/
+backend/dist/
+backend/coverage/
+
+backend/.cache/
+backend/*.log

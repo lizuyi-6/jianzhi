@@ -1,0 +1,134 @@
+ZHILENS / CONSTRAINTS
+知鉴 Constraints & Guardrails
+产品、数据、AI、交互与赛事约束 · v0.1
+状态
+HARD GUARDRAILS · MVP 强制执行
+适用
+产品 / UI / Prompt / 数据处理 / 后端 / Demo / 文案
+原则
+Fail closed > Guess; Evidence > Fluency; Diversity > Artificial consensus
+日期
+2026-08-17
+约束的作用
+这份文档不是“建议”。它定义知鉴在 48h 内绝对不能跨过的边界；当 PRD、设计或 Prompt 与本文件冲突时，先按本文件执行，再发起变更。
+1. 产品硬约束
+C-ID
+约束
+违规例子
+P-01
+不得输出最终人生/职业决策。
+“综合来看你应该读研。”
+P-02
+不得把三席 Reading Set 变成统一分数 Top 3。
+“匹配度 93% / 89% / 84%。”
+P-03
+不得取代知乎默认公共排序。
+进入 Lens 后永久覆盖原列表。
+P-04
+不得只展示与用户倾向一致的内容。
+工程岗用户只看到工作派。
+P-05
+不得把职业场景写成产品本体。
+品牌变成“AI 职业规划师”。
+P-06
+不得新增 Chat 作为主交互。
+首页大输入框 + AI 对话。
+2. Evidence / Provenance 约束
+每个结构化事实必须携带 source_id + evidence_span；没有 Span 的事实不能进入用户可见层。
+“不知道”必须作为一等状态存在；禁止把 Unknown 转成概率化猜测。
+Decision、Pre-decision Context、Post-decision Outcome、Reflection 必须分开，禁止 Outcome Leakage。
+Renderer 禁止重新阅读全文并引入新事实；只能消费已审核的结构化 Packet。
+用户点击“为什么这么说？”必须能回到与该判断直接对应的原文片段。
+3. 禁止推断与敏感画像
+允许结构化（需原文明确）
+禁止自行推断
+学历阶段、岗位方向、已有机会、明确目标、明确选择、明确原因、时间、地域、明确经济/时间约束、结果、反思
+家庭阶层、未公开收入、人格、智力、心理状态、政治倾向、风险人格、隐含动机、健康状况、敏感身份推断
+主语约束
+产品可以说“这篇经历明确公开了哪些条件”，不能说“我们理解这个人是什么样的人”。
+4. 统计与因果约束
+知乎内容是 self-selected narratives，不是代表性民调。禁止把当前样本比例包装成“人群概率”。
+Contrast Dimension 表示当前语料里的可观察关联，不表示因果；文案使用“伴随出现”“可能是分界”，不用“导致”“决定”。
+Information Gain / Coverage / Pairwise Support 仅用于内部阈值、Debug、评测，不展示给用户。
+相似经历不等于建议正确；产品只表达 Same / Different / Unknown，不表达成功率。
+5. Contrast Discovery 约束
+资格线
+要求
+Corpus-grounded
+维度必须来自当前语料明确字段，不能凭模型常识添加“人生重要因素”。
+Variation
+候选值至少有 2 个；所有样本相同的字段不能解释分歧。
+Decision contrast
+不同值与不同 Decision / Recommendation 在当前样本中有可观察分叉。
+Pre-decision only
+只有决策时已存在的条件能成为主 Contrast Dimension。
+User answerable
+用户能用 1 次点击或短文本回答，才允许进入 Lens Panel。
+Counterexample test
+系统必须主动寻找违反简单模式的反例；反例不是噪声。
+6. UI 与文案约束
+允许
+禁止
+“大家真正分歧在哪？”
+“影响你人生的 3 大关键因素”
+“这可能是两段经验产生不同选择的重要分界。”
+“这就是他们选择不同的原因。”
+“原文没有说明这一条件。”
+“根据语气推测作者可能……”
+“相似处境，另一种选择”
+“反方 / 错误观点”
+“先看这几篇”
+“最适合你的 Top 3”
+“为什么这么说？”
+“模型置信度 87%”
+7. 数据、API 与赛事约束
+只使用赛事官方 Skill / 开放平台或其他合法取得的内容；禁止批量爬取与滥用站内用户数据。
+知乎搜索 / 全网搜索额度有限，必须做应用层缓存；核心链路不能押在 100 次/天的直答 Agent 上。
+如果搜索仅返回短摘要且无官方完整读取能力，必须触发 P0 Gate 失败：Pivot 或使用官方允许的降级入口。
+Fixture 仅用于本地开发/测试；必须标记数据来源，不能在正式演示中把静态 Fixture 伪装成实时 API。
+Golden Demo 允许使用官方数据 snapshot/cache 保障稳定，但演示中应如实说明“已缓存以保证比赛稳定性”。
+8. 48h 明确禁止做
+禁止项
+原因
+Chat / 万能问答
+立即退化成通用 AI Wrapper。
+长期记忆 / 用户画像
+偏离当前 Question 的局部阅读任务。
+人格标签 / MBTI / 风险性格
+数据不足且容易造成不当推断。
+大知识图谱
+增加认知负担，弱化 30 秒 Demo。
+Agent 人格 / Agent Debate
+官方鼓励但非本项目核心闭环。
+自动私信 / 关注 / 社交闭环
+不是知识阅读价值的必要条件。
+复杂向量数据库 / 图数据库
+20-30 条候选内容不需要；先保证链路稳定。
+选择胜率 / 适用度百分比
+伪精确并混淆“可比较”与“正确”。
+9. Fail-closed 状态表
+状态
+必须做
+禁止做
+INSUFFICIENT_TEXT
+说明数据不足，停止条件抽取
+根据摘要补全作者经历
+NO_RELIABLE_DIMENSION
+回到默认排序或只展示公共高质量内容
+强行生成 3 个条件
+NO_COMPARABLE_EXPERIENCE
+展示缺口 + 经典视角
+拿低证据观点伪装亲历
+NO_COUNTER_EXPERIENCE
+B 席空置
+制造“反方”凑完整布局
+USER_CONDITION_UNCOVERED
+说明当前语料很少讨论该条件
+让 LLM 用常识扩写
+RATE_LIMITED
+读缓存 / 稳定降级
+无限重试、并发打爆 API
+10. 文档冲突优先级
+Product Anchor  > Constraints & Guardrails  > PRD  > AI & Data Contract  > 48h Build Playbook  > 具体实现 / Prompt / UI 细节
+上层文档决定“我们是什么/绝不能做什么”；下层文档决定“怎么实现”。
+若实现发现上层假设不成立（例如 P0 数据 Gate 失败），必须先更新上层决策，不允许在代码里偷偷绕过约束。

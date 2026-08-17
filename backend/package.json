@@ -1,0 +1,27 @@
+{
+  "name": "zhilens-backend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "validate:data": "tsx src/scripts/validate-dataset.ts",
+    "test": "node --import tsx --test test/**/*.test.ts",
+    "dev": "node --env-file=../.env.local --import tsx --watch src/server.ts",
+    "start": "node --env-file=../.env.local --import tsx src/server.ts",
+    "import:annotations": "tsx src/scripts/import-annotations.ts",
+    "build": "rm -rf dist && tsc -p tsconfig.build.json",
+    "start:prod": "node dist/server.js",
+    "check": "npm run typecheck && npm run validate:data && npm test && npm run build"
+  },
+  "dependencies": {
+    "zod": "^3.23.8",
+    "fastify": "^5.2.1",
+    "@fastify/cors": "^10.0.1"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "@types/node": "^22.10.2"
+  },
+  "version": "0.1.0"
+}

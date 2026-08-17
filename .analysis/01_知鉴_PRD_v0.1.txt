@@ -1,0 +1,339 @@
+ZHILENS / PRD
+知鉴 PRD
+Product Requirements Document · v0.1
+状态
+BUILD-READY · P0 数据 Gate 待实测
+产品
+知鉴 / ZhiLens
+主入口
+知乎 Question 页「按我的情况看」
+MVP
+3 席 Reading Set + Evidence + 条件修改闭环
+日期
+2026-08-17
+PRD 目标
+把已经冻结的产品决策转成可开发、可测试、可演示的需求。本文不重复赛题分析长推导；需要改方向时回看 Product Anchor。
+1. 背景与问题
+知乎的复杂多回答问题中，真人回答往往建立在不同的时间、经历、目标与约束上。通用 LLM 容易把这些条件差异压缩成“视情况而定”的平均答案；传统高赞 / 相关性排序又不能直接告诉用户“哪段经验与我当前处境可比较”。
+要解决的用户问题
+用户不是缺回答，而是缺一个低成本的方法去判断：哪些真人经验值得自己现在先读；哪些条件相同；哪些不同；哪些根本不知道。
+2. 用户与场景
+层级
+定义
+MVP 例子
+比赛楔子
+学生 / 毕业 3 年内职场新人
+读研还是工作、大厂还是创业公司、是否转 AI、第一份 Offer 怎么选。
+产品范围
+高经验依赖型问题读者
+答案明显依赖回答者当时处境与亲历，而非单一事实。
+不覆盖
+事实型 / 教程型明确问题
+例如“如何安装 Python”“北京到上海高铁多久”。
+2.1 核心 JTBD
+当我面对一个没有标准答案、但回答很多的问题时，我想快速知道“大家真正在哪些现实条件上分叉”，而不是再读一段平均总结。
+当我决定先读哪些回答时，我想知道这段经验和我的情况哪里相同、哪里不同、哪些信息未知。
+当我已经形成倾向时，我仍希望看到一个相似处境下的反向选择，避免被个性化系统封闭。
+当 AI 对真人内容做结构化判断时，我希望能点回原文，确认它凭什么这么说。
+3. 产品目标、非目标与成功标准
+类型
+内容
+目标 G1
+30 秒内让新用户理解：为什么这些回答并非真正回答同一种处境。
+目标 G2
+把“几十篇相关回答”压缩为 3 张角色互补的阅读卡，而不是 1 个生成式结论。
+目标 G3
+每个关键结构化判断都可以回到原文 Evidence；缺失信息明确显示 Unknown。
+目标 G4
+用户改变一个关键条件后，Reading Set 产生真实、可解释的变化。
+非目标 N1
+不做最终人生建议、胜率预测、适用度百分比。
+非目标 N2
+不做长期用户画像、人格推断、MBTI 式标签。
+非目标 N3
+不替代知乎默认排序，不做整个列表的个性化重排。
+非目标 N4
+不做 Chat、Agent 社交、大知识图谱、自动私信/发布。
+3.1 MVP 成功标准
+首次体验用户能说出“三张卡为什么不是 Top 3，而是三种不同阅读角色”。
+Golden Demo 中，修改“工程开发 -> 算法/研究”后至少 1 个 Reading Slot 发生变化，并有可解释原因。
+Evidence-backed Explanation Rate = 100%：所有“为什么这么说”均能回原文片段。
+Evidence Precision 验收目标 >= 95%；Hallucinated Fact Rate 接近 0；Contrast Precision@3 验收目标 >= 0.8。
+4. 信息架构与 6 步黄金路径
+1. Question 页面2. 点击「按我的情况看」3. Lens Panel：大家真正分歧在哪？4. 用户确认 2-4 个当前条件5. Reading Set：三席真人内容6. 原回答阅读提示 / 修改条件后更新 Reading Set
+步骤
+用户看到
+系统行为
+退出条件
+1
+正常 Question + 入口按钮
+加载现有问题与内容候选
+用户不点 Lens，保持默认阅读
+2
+分析进行中
+资格审查 + 经验结构化 + Contrast Discovery
+数据不足则进入弃权态
+3
+2-4 个分歧条件 +「为什么」
+输出 DiscussionLens；每个条件绑定 evidence
+用户可拒绝某条件
+4
+你的情况
+形成 CurrentDecisionContext，仅当前 Question 有效
+用户可跳过未知项
+5
+三席 Reading Set
+规则比较 + 角色式检索
+没有反例允许空席
+6
+原回答 + 阅读提示
+突出 Evidence；条件改变后重算集合
+用户返回默认排序或关闭 Lens
+5. 功能需求总表
+ID
+优先
+模块
+需求
+验收
+F-001
+P0
+Question 入口
+在 Question 页提供「按我的情况看」入口；默认阅读不受影响。
+未点击时与普通 Question 阅读无冲突。
+F-002
+P0
+Lens 分析
+对候选内容进行资格审查、Experience/Outcome/Reflection/Analysis 分类。
+无足够文本时不得继续生成条件。
+F-003
+P0
+Evidence 抽取
+任何 Context Fact / Decision / Outcome 必须绑定原文 Span。
+无 evidence 的字段只能为 Unknown。
+F-004
+P0
+分歧条件
+输出 2-4 个 Contrast Dimensions；来自当前讨论，不得凭常识列因素。
+每项均可展开“为什么这么说”。
+F-005
+P0
+用户条件
+每个问题只询问本次 DiscussionLens 里的维度；允许“不确定/都不是/不重要”。
+不出现通用画像表。
+F-006
+P0
+三席集合
+分别产生：可比较经验、相似处境另一种选择、经典视角。
+不得按统一分数直接 Top 3。
+F-007
+P0
+Same/Diff/Unknown
+每张经验卡展示与当前用户明确相同、不同、未知的条件。
+不显示适用度百分比。
+F-008
+P0
+原文回溯
+卡片和阅读提示中的关键结构可展开原文 Evidence。
+Evidence 与 source_id/URL 一一对应。
+F-009
+P0
+条件修改
+用户改变一个条件后重新计算 Reading Set，并解释发生变化的结构原因。
+不生成新的最终建议。
+F-010
+P0
+弃权状态
+支持 Insufficient Text / No Reliable Dimension / No Comparable / No Counterexample。
+失败时说不知道，不补全。
+F-011
+P0
+缓存
+缓存官方搜索结果、抽取结构与 Question-level Lens。
+避免重复调用与赛事 API 超额。
+F-012
+P1
+精选评论
+若数据可得，将精选评论作为 Counter-experience / Temporal Correction 候选。
+不依赖此能力完成 MVP。
+F-013
+P1
+第二问题
+支持至少 2 个额外 Question 证明机制可泛化。
+Golden Demo 仍只打磨一个。
+F-014
+P1
+Debug 面板
+开发模式展示 source/evidence、内部 contrast 指标与选择路径。
+生产演示默认隐藏。
+6. Lens Panel 详细需求
+6.1 状态
+状态
+UI
+规则
+Idle
+「按我的情况看」
+不预加载个人画像。
+Analyzing
+轻量进度：正在区分经验 / 找分歧 / 组织阅读
+可以渐进显示；禁止生成“AI 建议”。
+Ready
+2-4 个分歧条件
+默认优先 3 个；每个条件可查看依据。
+Insufficient
+当前讨论不足以形成可靠透镜
+允许回到默认排序，不强行给三项。
+6.2 Contrast Dimension 卡
+字段：label、可选值、简短解释、“为什么这么说”、supporting_sources。
+文案使用“当前这组讨论中…”“可能是分界”，避免“决定因素”“因果”。
+最多显示 4 个；若候选多于 4，按 Eligibility -> Contrast -> Coverage -> Evidence -> Dedup 排序。
+用户可选“不确定”“都不是”“这个条件对我不重要”。
+7. Reading Set 详细需求
+席位
+资格
+必须展示
+空席规则
+A 和你很像的经历
+有 EXPERIENCE；Same 较多；关键 Different 少；Evidence 完整
+作者/时间/选择、Same/Diff/Unknown、为什么先看、原文依据
+无可比较经验则显示缺口，不拿泛泛观点凑位
+B 相似处境，另一种选择
+与 A/用户条件可比较，但 Decision/Recommendation 不同
+相同处境、关键差异、另一种选择、可能的分界、原文依据
+无可靠反向经验允许空席
+C 值得看的经典回答
+公共质量信号高；可为 ANALYSIS/高质量回答；不要求条件接近
+为什么值得读、为什么不能直接照搬、作者/时间/质量信号
+始终保留公共质量坐标；若 API 无质量信号，按固定 Golden Fixture 降级
+核心约束
+Reading Set 是“Minimum Sufficient Reading Set”，不是 Top 3。三个席位目标不同，不能共享一个总分公式。
+8. 原回答阅读提示与 Evidence
+原文仍是视觉主体；AI 层只提供“为什么先看这篇”的轻量阅读说明书。
+阅读提示默认显示 2-4 条 Same / Different / Unknown；点击任一条跳转或展开对应原文 Span。
+Renderer 采用 Closed-world：只能使用 SourceDocument、Extracted Evidence、CurrentDecisionContext、ComparisonResult。
+不得把原回答长篇重写成 AI 摘要；不得把 AI 摘要置于原文之前并替代阅读。
+9. 异常、Unknown 与弃权状态
+代码
+触发
+用户文案
+系统动作
+E-DATA-001
+搜索只有短摘要 / 无足够正文
+当前内容不足以可靠判断经验条件。
+停止结构化；记录 Gate 失败；提供默认阅读。
+E-LENS-001
+没有可靠 Contrast Dimension
+当前讨论暂时不足以形成可靠的“按我的情况看”。
+不生成伪条件。
+E-COMP-001
+无可比较 Experience
+没有找到公开条件与你足够可比较的亲历内容。
+保留经典视角；不凑卡。
+E-COUNTER-001
+无反向经验
+没有找到条件足够接近、但走另一条路的可靠经验。
+B 席空置，不制造对立。
+E-RATE-001
+官方接口限流
+数据暂时不可用，请稍后再试。
+优先读缓存；不可用时 graceful fallback。
+E-USER-001
+用户自定义条件无覆盖
+当前找到的经验很少明确讨论这个条件。
+标记 coverage insufficient，不让 LLM 用常识补。
+10. 数据入口与 P0 Gate
+P0 数据门
+开发第一阶段必须实测官方赛事 Skill / Search API：返回文本是否足以做 evidence-backed extraction；能否定位 Answer / Question；是否存在进一步读取完整内容的官方能力。
+模式
+用途
+允许性
+QuestionAdapter
+若官方能力支持 Question -> Answers / 完整内容，作为理想生产入口。
+优先
+SearchAdapter
+若不能批量拉同题 Answer，则用 Question Title / Query -> zhihu_search 召回相关经验。
+官方降级
+FixtureAdapter
+本地开发与自动化测试；Fixture 必须来自合法取得的官方数据或人工录入，不伪装成线上实时结果。
+开发专用
+UnauthorizedCrawler
+批量爬取知乎用户内容。
+禁止
+11. 非功能需求
+维度
+MVP 目标
+性能
+首屏可交互 < 2s；缓存 Lens < 1.5s；冷启动分析以 15s 为目标上限，超过 0.8s 必须展示阶段进度。
+稳定性
+任何模型失败必须降级为可解释状态；不得展示半结构化脏数据或未绑定 Evidence 的字段。
+可观察性
+记录每阶段耗时、输入 source 数、有效 Experience 数、Contrast 数、三席选择原因、弃权码。
+可复现性
+Golden Demo Question 使用固定 snapshot/cache，决赛演示不得依赖实时 API 波动。
+安全/隐私
+只处理公开内容中明确表达的决策条件；不生成敏感人格/阶层/心理推断。
+合规
+只使用官方开放能力与合法内容来源；遵守赛事禁止批量爬取与滥用用户数据规则。
+12. 埋点与产品指标
+事件/指标
+定义
+用途
+lens_open
+点击「按我的情况看」
+入口使用率
+lens_ready
+成功形成 2-4 个 Contrast Dimensions
+可用率
+evidence_open
+展开“为什么这么说”
+可信解释被使用程度
+context_submit
+提交当前条件
+漏斗
+reading_slot_open
+打开 A/B/C 任一席
+阅读集合有效性
+counter_slot_open_rate
+B 席打开率
+反例是否真有价值
+context_change
+用户修改条件
+核心闭环使用
+reading_set_changed
+条件修改后集合实际变化
+个性化机制是否有效
+fallback_code
+弃权 / 降级码
+数据与模型问题定位
+13. Golden Demo 验收
+打开“有不错后端 Offer，要不要读研”的 Question；默认页面先呈现普通多回答状态。
+点击「按我的情况看」，展示 3 个有 Evidence 的分歧条件，例如目标方向 / 当前机会 / 读研目的。
+用户选择：工程开发 + 已有满意 Offer + 非研究驱动。
+生成三席 Reading Set；B 席必须展示“相似处境，另一种选择”。
+打开 A 或 B，点击“为什么这么说？”看到原文 Span。
+将“工程开发”改成“算法/研究”；至少一席发生变化，并解释“目标方向变化后，研究训练/学历门槛成为更有区分度的条件”。
+演示全过程不出现最终 Recommendation，不出现适用度百分比。
+14. 依赖与开放问题
+级别
+问题
+当前处理
+P0
+官方赛事 API 是否提供足够正文 / Answer 定位 / 同题 Answers？
+开工 30 分钟数据杀手实验；未通过则 SearchAdapter 或 Pivot。
+P0
+首个 Golden Demo 的真实 Question 与样本
+数据 Gate 后立即冻结 1 个真实 Question snapshot。
+P0
+正式 Demo 运行形态
+MVP 默认：独立 Web Demo，模拟 Question 结构；产品愿景仍是原生 Question Lens。
+P1
+精选评论能否作为反例候选
+数据可得再接入，不阻塞主链。
+15. Ready-to-build Checklist
+Product Anchor 与 Constraints 已冻结；新增需求先检查是否触碰产品不变量。
+开工第一动作不是写 UI，而是执行 P0 数据 Gate 并冻结 Adapter 方案。
+前后端以 AI/Data Contract 的 typed schema 为唯一接口；前端不直接消费 LLM 自由文本。
+Golden Demo 使用固定合法 snapshot/cache，实时 API 只作为可选数据刷新来源。
+任何“看起来更完整”的模型推断，只要没有 Evidence，就不能进入用户可见层。
+36h 后主功能冻结；只允许修 Bug、补异常态、视觉与演示稳定性。
+PRD 签收条件
+当 M0 数据 Gate 通过且首个 Golden Question snapshot 冻结后，本 PRD 进入正式实施；若 Gate 失败，先更新 Anchor/PRD 的数据入口或产品 Pivot，再继续开发。

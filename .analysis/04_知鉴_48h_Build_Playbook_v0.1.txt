@@ -1,0 +1,141 @@
+ZHILENS / 48H PLAYBOOK
+知鉴 48h Build Playbook
+开发作战计划、里程碑、验收与比赛交付 · v0.1
+开发窗口
+9/13 10:00 - 9/15 10:00
+核心策略
+先数据 Gate，再垂直切片；36h 后禁止加主功能
+Golden Demo
+读研 / 工作 Question · 条件改变导致 Reading Set 可解释变化
+日期
+2026-08-17
+唯一总目标
+48 小时结束时，评委必须能直接打开一个公网 Demo，在 30 秒内理解“知鉴不是 AI 总结器”，并完整走通 Evidence-backed Lens -> 3 席 Reading Set -> 条件修改闭环。
+1. 里程碑 Gate
+Gate
+截止
+必须看到
+失败动作
+M0 数据 Gate
++2h
+官方 API/Skill 的真实响应；正文可用性结论；Adapter 决策
+失败立即 SearchAdapter / Pivot，不继续美化概念
+M1 Vertical Slice
++12h
+1 个 Fixture/真实 snapshot：Source -> Extraction -> 1 个 Lens -> A/B/C 卡 JSON
+不做 UI 动效；先修 schema/Prompt
+M2 End-to-End
++24h
+Question mock -> Lens -> 用户条件 -> Reading Set -> Evidence 展开
+砍 P1，确保主链可点
+M3 Golden Demo
++36h
+修改一个条件，Reading Set 真变化；演示稳定
+36h 后冻结主功能
+M4 Submission Ready
++44h
+公网部署、缓存、异常态、文档/视频素材
+只修 Bug 和演示
+M5 Final
++48h
+最终提交材料完成
+不再改数据 schema
+2. 时间切片
+0-2h：数据杀手实验
+拉官方 Hackathon Skill / Search API 样本；确认正文、ID、URL、分页、精选评论、后续完整读取能力。
+冻结 Adapter：QuestionAdapter / SearchAdapter / Pivot。
+选择 1 个 Golden Question；保存合法 snapshot 作为演示缓存。
+2-12h：Schema first + Vertical Slice
+实现 SourceDocument、ExperienceRecord、DiscussionLens、CurrentDecisionContext、ComparisonResult、ReadingSet schema。
+完成 LLM-1 Extraction 与 evidence span；先用 8-12 条样本。
+实现 structured diff、候选 Contrast eligibility、三席选择最小逻辑。
+输出一份纯 JSON 的端到端结果；这个阶段不追求漂亮页面。
+12-24h：产品主链
+Question mock 页面 +「按我的情况看」。
+Lens Panel：2-4 个分歧条件 + “为什么这么说”。
+CurrentDecisionContext 交互。
+Reading Set 三席 + Same/Different/Unknown + Evidence。
+原回答阅读提示与回溯。
+24-36h：闭环与可信度
+实现条件修改 -> Reading Set 重算 -> “为什么变了”。
+加入 NO_RELIABLE_DIMENSION / NO_COUNTER / INSUFFICIENT_TEXT 等 Fail-closed 状态。
+做缓存、日志与 Golden Demo 固定 snapshot。
+跑 10-20 条人工 Gold，修 Evidence 错误优先于视觉。
+36-44h：只允许稳定性与视觉
+冻结主功能；不再加 Agent、图谱、社交、第二套核心交互。
+打磨 Loading、卡片层级、Evidence 展开、条件变化动画。
+添加 1-2 个备用 Question；必须复用同一 Pipeline。
+部署公网；断网/限流/接口异常时 Golden snapshot 可稳定回放。
+44-48h：提交与路演
+录演示视频、准备产品说明计划书、README、代码仓库说明。
+完整跑 3 次 3 分钟 Demo；确保不依赖临时账号状态。
+最后只修阻断 Bug，不升级依赖、不换模型、不改 schema。
+3. P0 / P1 / 禁止做
+级别
+内容
+P0 必须
+官方/Fixture Adapter；Evidence extraction；Contrast 2-4；用户条件；三席 Reading Set；原文 Evidence；条件修改闭环；Fail-closed；缓存；公网部署。
+P1 有余力
+精选评论反例；第二/第三 Question；Debug 面板；基础埋点；更细腻的变化解释。
+禁止
+Chat、长期画像、Agent 人格、Agent Debate、大图谱、自动社交、复杂向量/图数据库、选择胜率、适用度百分比、全列表重排。
+4. 推荐工程分层
+web/                 Question mock + Lens UI + Reading Setapi/                 orchestration endpointsadapters/            official_search / question / fixtureschemas/             pydantic/zod contractspipeline/extract/    LLM-1 + evidence validatorpipeline/contrast/   normalize + eligibility + pairwise aggregatepipeline/compare/    deterministic Same/Diff/Unknownpipeline/retrieve/   A/B/C role-based retrievalpipeline/render/     closed-world LLM-3 / templatescache/               source/extract/lens/readingeval/                fixtures + gold labels + metrics
+实现建议
+Embedding 只用于 Recall；一次 Question 20-30 条候选时，不上向量数据库/图数据库。先用普通缓存 + JSON/SQLite/Postgres 即可。
+5. 团队并行方式
+Track
+职责
+合流点
+Data/AI
+Adapter、Extraction、Contrast、Eval
+每 2-3h 输出稳定 JSON fixture 给前端
+Backend
+Schema、缓存、API orchestration、错误码
+保证同一 contract，不让前端直连 LLM
+Frontend/Product
+Question mock、Lens Panel、Reading Set、Evidence、状态机
+只消费 RenderPacket / typed API
+Demo/QA
+Golden 数据、手工 Gold、回归、3 分钟演示
+36h 后成为优先级最高 Track
+若单人开发：按 Data Gate -> Schema/Pipeline -> UI -> QA 顺序执行，不并行追 P1。
+6. Golden Demo 3 分钟结构
+时间
+动作
+评委应理解
+0:00-0:20
+打开多回答 Question；指出“100 个回答不该只剩一个 AI 答案”。
+问题是真实的平台阅读成本。
+0:20-0:50
+点击「按我的情况看」；出现 3 个分歧条件并展开一条 Evidence。
+AI 在恢复分歧结构，不是总结。
+0:50-1:20
+选择工程岗 / 有 Offer / 非研究驱动。
+只问当前讨论真正需要的条件。
+1:20-2:00
+出现 A/B/C 三席；重点展示 B“相似处境，另一种选择”。
+不是过滤泡，不给最终建议。
+2:00-2:25
+打开一张卡，“为什么这么说？”回到原文。
+Every inference has provenance。
+2:25-2:50
+把工程岗改为算法/研究；Reading Set 变化。
+条件变了，值得参考的经验也变了。
+2:50-3:00
+收束：人负责经历，AI 负责结构，用户负责判断。
+平台价值与 AI 边界清楚。
+7. 最终提交检查
+可运行公网链接；匿名/测试登录路径明确。
+产品说明计划书：场景价值、知乎契合、技术机制、数据与 Evidence、48h 实现。
+演示视频：Golden Demo 90-180 秒，无依赖口头补充的隐性步骤。
+代码仓库：README、架构图、运行方式、环境变量示例、Fixture 与 Eval 目录。
+赛事合规：不含未授权抓取、未授权 IP/素材、隐私推断。
+提交前冻结版本并保存一份可离线复现的 Golden snapshot。
+44h Freeze Line
+44 小时后禁止：升级依赖、换主模型、改 schema、重构核心 Pipeline、增加新入口。只修 P0 Bug、部署、文案、视觉和路演稳定性。
+7.1 提交前 15 分钟回归
+无缓存启动一次；有缓存启动一次；限流/断网降级一次。
+Golden Demo 连跑 3 次，时间均 < 3 分钟，且 Evidence 展开不失败。
+检查所有用户可见文案：无“推荐你选择”“匹配度”“成功率”“决定因素”。
+检查仓库与部署环境：无密钥、无未授权数据、无测试个人信息。

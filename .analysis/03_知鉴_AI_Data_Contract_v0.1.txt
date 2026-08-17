@@ -1,0 +1,197 @@
+ZHILENS / AI & DATA CONTRACT
+知鉴 AI & Data Contract
+数据模型、Pipeline、检索约束与评测协议 · v0.1
+状态
+IMPLEMENTATION SPEC · Schema first
+原则
+LLM 负责理解 · 规则负责约束 · 原文负责裁决
+核心
+Extract -> Contrast -> Reframe
+日期
+2026-08-17
+工程总原则
+禁止一个大 Prompt 从几十篇全文直接生成最终 Reading Set。每个阶段必须产生可检查的中间结构，且最终 Renderer 处于 closed-world。
+1. Pipeline 总览
+Official API / Fixture  -> SourceDocument[]  -> ContentQualification  -> ExperienceRecord[]  -> Dimension Normalization  -> Contrast Discovery  -> DiscussionLens  -> CurrentDecisionContext  -> Deterministic Comparison  -> Role-based Retrieval (A/B/C)  -> RenderPacket  -> UI
+2. 适配器层
+Adapter
+输入
+输出
+备注
+QuestionAdapter
+question_id / url
+SourceDocument[]
+理想；仅在官方能力实测支持时启用。
+SearchAdapter
+question_title / query
+SourceDocument[]
+官方降级；不声称结果是该 Question 的全部 Answers。
+FixtureAdapter
+fixture_id
+SourceDocument[]
+本地开发/CI/Golden Demo snapshot。
+3. 核心数据契约
+3.1 SourceDocument
+{  "source_id": "answer_xxx",  "source_type": "answer|article|comment",  "question_id": "optional",  "question_title": "...",  "author": {"id": "optional", "name": "..."},  "published_at": "ISO-8601|null",  "text": "raw text or official excerpt",  "url": "...",  "platform_signals": {    "relevance": null,    "authority": null,    "vote_count": null,    "comment_count": null  },  "source_mode": "official_api|fixture"}
+3.2 ContentQualification
+{  "source_id": "answer_xxx",  "knowledge_types": ["EXPERIENCE", "OUTCOME", "REFLECTION", "ANALYSIS"],  "usable_for_experience_slot": true,  "text_sufficiency": "SUFFICIENT|PARTIAL|INSUFFICIENT",  "reason_codes": []}
+3.3 ExperienceRecord
+{  "source_id": "answer_xxx",  "decision": {    "value": "WORK|GRAD_SCHOOL|CONDITIONAL|NO_CLEAR_DECISION",    "evidence": {"quote": "...", "start": 120, "end": 145}  },  "pre_decision_context": [    {      "dimension_id": "career_goal",      "semantic_family": "GOAL",      "value": "ENGINEERING",      "evidence": {"quote": "...", "start": 20, "end": 48}    }  ],  "outcomes": [],  "reflection": null,  "unknown_dimensions": []}
+3.4 DiscussionLens
+{  "question_key": "q_or_query_hash",  "dimensions": [    {      "id": "career_goal",      "label": "目标方向",      "semantic_family": "GOAL",      "observed_values": ["ENGINEERING", "RESEARCH"],      "coverage": {"known": 9, "eligible": 12},      "supporting_sources": ["a1", "a2"],      "counterexample_sources": ["a7"],      "user_answerable": true,      "internal_metrics": {        "normalized_information_gain": 0.46,        "pairwise_contrast_support": 6      }    }  ]}
+3.5 CurrentDecisionContext
+{  "question_key": "...",  "values": {    "career_goal": "ENGINEERING",    "current_opportunity": "HAS_SATISFACTORY_OFFER",    "study_motivation": "NOT_RESEARCH_DRIVEN"  },  "user_rejected_dimensions": [],  "custom_condition": null}
+3.6 ComparisonResult
+{  "source_id": "answer_xxx",  "same": ["career_goal", "current_opportunity"],  "different": ["decision_year"],  "unknown": ["study_motivation"],  "comparable_eligible": true,  "explanation_facts": [    {"type": "SAME", "dimension": "career_goal", "source_evidence_id": "ev_12"}  ]}
+3.7 ReadingSet
+{  "slot_a": {"role": "COMPARABLE", "source_id": "a1"},  "slot_b": {"role": "COUNTER_EXPERIENCE", "source_id": "a7"},  "slot_c": {"role": "CLASSIC", "source_id": "a3"},  "warnings": []}
+4. LLM 职责边界
+阶段
+LLM 允许做
+LLM 禁止做
+LLM-1 Qualification + Extraction
+分类知识类型；抽取明确 Context/Decision/Outcome/Reflection；绑定 evidence
+猜未公开履历、人格、家庭、动机
+LLM-2 Normalization + Candidate Dimension
+把“想做研究/目标实验室/算法研究岗”归一到 Question-local 语义维度；生成候选维度
+直接凭常识输出“人生重要因素”或因果判断
+LLM-3 Renderer
+把已锁死结构改写成人话
+重新阅读 raw text 后新增事实；输出最终建议
+5. Contrastive Condition Discovery
+5.1 Eligibility
+检查
+规则
+Evidence
+dimension 的值必须来自 evidence-backed pre_decision_context。
+Variation
+至少两个有效值；单一值直接淘汰。
+Coverage
+覆盖不足的维度不进入主 Lens；阈值由 Gold Set 调优。
+Decision Contrast
+不同值与不同 Decision/Recommendation 在当前语料中存在结构差异。
+User Answerability
+必须能转成短选项或简单输入。
+Dedup
+语义同义维度合并，例如 career_goal / target_role。
+5.2 Pairwise -> Aggregate
+for each pair (A, B) where decision(A) != decision(B):    diff = structured_diff(A.pre_decision_context, B.pre_decision_context)    if pair_is_comparable_on_known_fields(diff):        support(diff.different_dimensions)for each candidate dimension D:    require evidence + variation + coverage + user_answerable    compute internal contrast metrics    run counterexample search    deduplicate semantic neighborsreturn top 2-4 dimensions
+不要做的事
+不要让 LLM 一次读取 30 篇全文并回答“影响这个选择的 3 个重要因素是什么”。Baseline 可以这么做，但正式链路不这么做。
+6. Comparison 与三席检索规则
+6.1 Deterministic Comparison
+标准化字段后用普通程序产生 Same / Different / Unknown。
+Unknown 不参与“相似度抵消”；不同性质字段不做线性加权。
+时间只在被 DiscussionLens 判定为相关或内容明显时效敏感时作为差异。
+6.2 Slot A / B / C
+Slot
+首要目标
+排序/选择原则
+A Comparable
+找到公开条件与用户可比较的亲历
+Experience 资格 -> 关键 Same 多 -> 关键 Different 少 -> Unknown 少 -> Evidence 完整 -> 平台质量 tie-break
+B Counter
+在相似条件下保留另一种选择
+与用户/A 可比较 -> Decision/Recommendation 不同 -> Evidence 完整；找不到允许为空
+C Classic
+保留公共质量坐标
+相关性/权威度/点赞评论等平台信号 + 内容质量；不要求处境接近
+7. Closed-world Renderer Contract
+Renderer 允许输入
+SourceDocument 元数据 + Extracted Evidence + DiscussionLens + CurrentDecisionContext + ComparisonResult + Slot Role。除此之外的事实视为不可见。
+输出可以润色，不可以扩展事实世界。
+所有“原因”文案应表述为“在当前讨论中观察到的分界/差异”，不使用强因果。
+如果某字段 Unknown，Renderer 必须明确写“原文没有说明”，不能隐去以制造完整感。
+8. Cache 与版本
+Key
+缓存内容
+失效建议
+source:<id>
+SourceDocument
+官方内容版本变化或手动刷新
+extract:<source_hash>:<schema_ver>
+ContentQualification + ExperienceRecord
+文本 hash / schema / prompt 版本变化
+lens:<question_hash>:<corpus_hash>:<lens_ver>
+DiscussionLens
+候选语料或算法版本变化
+reading:<lens_hash>:<context_hash>
+ReadingSet
+用户 context 变化立即重算
+9. Error Codes
+Code
+层
+意义
+INSUFFICIENT_TEXT
+Source/Extraction
+文本不足以形成可信事实。
+NO_USABLE_EXPERIENCE
+Qualification
+没有足够 Experience/Analysis 候选。
+NO_RELIABLE_DIMENSION
+Contrast
+没有通过资格线的主分歧条件。
+NO_COMPARABLE_EXPERIENCE
+Retrieval
+A 席缺失。
+NO_COUNTER_EXPERIENCE
+Retrieval
+B 席缺失，合法状态。
+USER_CONDITION_UNCOVERED
+Context
+用户新增条件在语料中几乎无 evidence。
+RATE_LIMITED
+Adapter
+官方接口触发限流。
+RENDER_PACKET_INVALID
+Renderer
+最终文案引用了未授权事实；阻断展示。
+10. Gold Set 与评测
+层
+人工标注
+A 知识类型
+EXPERIENCE / OUTCOME / REFLECTION / ANALYSIS / GENERAL_OPINION。
+B Context Facts
+明确条件 + 原文 Span。
+C Decision
+WORK / GRAD_SCHOOL / CONDITIONAL / NO_CLEAR_DECISION 等 Question-local enum。
+D Contrast Dimensions
+两名标注者独立判断主要分歧维度，并指出支持 Pair。
+指标
+定义
+验收目标
+Evidence Precision
+模型提取的可见事实中，真正被原文支持的比例
+>= 95%
+Hallucinated Fact Rate
+原文没有却被模型生成的背景/条件比例
+接近 0
+Contrast Precision@3
+Top 3 Contrast 中人工认可的比例
+>= 0.8
+Evidence-backed Explanation Rate
+用户可见解释均能回到原文
+100%
+Stability
+随机移除 20% 内容后 Top 3 Dimension 重合
+高重合；记录而非伪精确承诺
+10.1 Baseline / Ablation
+Baseline A：全文大 Prompt 直接总结“3 个重要因素”。
+Baseline B：全文 Embedding / Clustering。
+ZhiLens：Evidence Extraction -> Structured Contrast -> Dimension Validation。
+比较：原文依据、泛泛因素比例、稳定性、可解释性。
+11. P0 Data Gate Protocol
+5 类 Query x 前 20 条 = 100 样本；人工标 E0-E3。
+记录正文/摘要长度、source_id、question/answer id、URL、分页、精选评论、是否存在官方 follow-up 完整读取。
+强通过：E2/E3 >= 30%，且核心问题每类至少 5 条强可比较经验。
+10%-30% 且存在官方完整内容 follow-up：条件通过。
+短摘要 + 无官方完整读取 + E2/E3 极少：No-Go；Pivot，不靠模型补全。
+12. Ready-to-code Checklist
+所有 schema 在代码中使用 Pydantic/Zod 等强类型定义并带 schema_version。
+Extraction 输出先过 evidence validator，再进入 contrast；validator 失败的字段直接丢弃/Unknown。
+Contrast 模块不读取 raw 全文，只读取结构化 ExperienceRecord。
+Comparison 与三席选择优先写成确定性代码，LLM 不负责计算“相似度”。
+Renderer 只接收 RenderPacket；加入 server-side 校验，出现未授权事实时返回 RENDER_PACKET_INVALID。
+Golden fixtures 与人工 Gold Set 放入版本库，任何 Prompt/schema 变化必须回归。
+最先实现的纵切
+8-12 条合法样本 -> ExperienceRecord -> 1-3 个 Contrast Dimensions -> 一个 CurrentDecisionContext -> A/B/C ReadingSet JSON。先把这条链跑通，再接页面。
