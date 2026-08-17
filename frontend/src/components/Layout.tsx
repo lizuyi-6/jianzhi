@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom';
 import TopBar from './TopBar';
 import SideNav from './SideNav';
+import ToastHost from './Toast';
 
 export default function Layout() {
   return (
@@ -12,6 +13,7 @@ export default function Layout() {
           <Outlet />
         </main>
       </div>
+      <ToastHost />
     </div>
   );
 }

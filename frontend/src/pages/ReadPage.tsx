@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api/client';
 import type { EvidenceSpan, RenderCard, SourceDocument } from '../api/types';
 import { useApp } from '../state/AppContext';
 import { dimensionLabel, valueLabel, whyReadLabel } from '../i18n/labels';
 import LensDrawer from '../components/LensDrawer';
+import { showToast } from '../components/Toast';
+import { getPrefsVersion, isCollected, recordHistory, subscribePrefs, toggleCollection } from '../state/prefs';
 
 interface AnchoredEvidence extends EvidenceSpan {
   index: number;
@@ -43,12 +45,14 @@ export default function ReadPage() {
   const navigate = useNavigate();
   const { packet, packetLoading, generateReadingSet, conditions, lens, openDrawer, error } = useApp();
   const [source, setSource] = useState<SourceDocument | null>(null);
-  const [followed, setFollowed] = useState(false);
+  useSyncExternalStore(subscribePrefs, getPrefsVersion);
 
   const card: RenderCard | null = useMemo(() => {
     if (!packet || !role) return null;
     return packet.cards.find((c) => c.role === role) ?? null;
   }, [packet, role]);
+
+  const collectedSnap = card ? String(isCollected(card.source_id)) : 'false';
 
   useEffect(() => {
     if (!packet && !packetLoading) void generateReadingSet();
@@ -58,7 +62,11 @@ export default function ReadPage() {
   useEffect(() => {
     if (!card) return;
     let cancelled = false;
-    api.source(card.source_id).then((r) => { if (!cancelled) setSource(r.source); }).catch(() => {});
+    api.source(card.source_id).then((r) => {
+      if (cancelled) return;
+      setSource(r.source);
+      recordHistory({ source_id: r.source.source_id, title: r.source.question_title.replace(/ - 知乎$/, '') });
+    }).catch(() => {});
     return () => { cancelled = true; };
   }, [card]);
 
@@ -109,9 +117,7 @@ export default function ReadPage() {
               <div className="feed-author-name">{source?.author.name || '知乎用户'}</div>
               <div className="feed-author-sub">{source?.source_type === 'article' ? '专栏文章' : '回答'}</div>
             </div>
-            <button className={'btn-mini follow-btn' + (followed ? ' followed' : '')} type="button" onClick={() => setFollowed((v) => !v)}>
-              {followed ? '已关注' : '+ 关注'}
-            </button>
+            <button className="btn-mini follow-btn" type="button" onClick={() => showToast('演示版本暂未开放作者关注')}>+ 关注</button>
           </div>
           {typeof votes === 'number' && <p className="read-votes">{votes} 人赞同了该{source?.source_type === 'article' ? '文章' : '回答'}</p>}
 
@@ -123,6 +129,15 @@ export default function ReadPage() {
             {typeof votes === 'number' && <span className="feed-vote">▲ 赞同 {votes}</span>}
             {typeof comments === 'number' && <span>{comments} 条评论</span>}
             {source?.published_at && <span>发布于 {source.published_at.slice(0, 10)}</span>}
+            {card && source && (
+              <button
+                type="button"
+                className={'btn-mini collect-btn' + (collectedSnap === 'true' ? ' followed' : '')}
+                onClick={() => showToast(toggleCollection({ source_id: source.source_id, title: source.question_title.replace(/ - 知乎$/, '') }) ? '已收藏' : '已取消收藏')}
+              >
+                {collectedSnap === 'true' ? '★ 已收藏' : '☆ 收藏'}
+              </button>
+            )}
           </div>
           <p className="read-provenance">来源：知乎官方搜索 API（official_api_search） · 高亮与编号为依据原文的 Evidence 引用</p>
         </section>

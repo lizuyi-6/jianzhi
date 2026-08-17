@@ -1,0 +1,20 @@
+const { chromium } = require('playwright');
+(async () => {
+  const browser = await chromium.launch();
+  const page = await browser.newPage();
+  const errs = [];
+  page.on('pageerror', (e) => errs.push('PAGEERROR: ' + e.message));
+  page.on('console', (m) => { if (m.type() === 'error') errs.push('CONSOLE: ' + m.text().slice(0, 200)); });
+  await page.goto('http://localhost:5173/', { waitUntil: 'networkidle' });
+  await page.fill('.searchbox input', '读研还是工作');
+  await page.press('.searchbox input', 'Enter');
+  await page.waitForURL('**/search**');
+  await page.waitForTimeout(8000);
+  const url = page.url();
+  const meta = await page.locator('.search-meta').textContent().catch(() => null);
+  const errText = await page.locator('.inline-error').textContent().catch(() => null);
+  const items = await page.locator('.feed-item').count();
+  const body = (await page.locator('.page-main').textContent().catch(() => '')).slice(0, 300);
+  console.log(JSON.stringify({ url, meta, errText, items, errs, body }, null, 2));
+  await browser.close();
+})().catch((e) => { console.error('FATAL', e.message); process.exit(1); });

@@ -1,12 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useSyncExternalStore } from 'react';
 import { api } from '../api/client';
 import type { SourceDocument } from '../api/types';
 import { useApp } from '../state/AppContext';
+import { followedTopics, getPrefsVersion, isQuestionFollowed, subscribePrefs, toggleQuestionFollowed, toggleTopic } from '../state/prefs';
+import { showToast } from '../components/Toast';
 import LensCard from '../components/LensCard';
 import LensDrawer from '../components/LensDrawer';
 
 const QUESTION_TAGS = ['计算机科学与技术', '考研', '职业选择', '求职', '研究生'];
+const PAGE_SIZE = 50;
 
 type SortMode = 'default' | 'newest' | 'votes';
 
@@ -26,16 +30,35 @@ export default function QuestionPage() {
   const { meta, backendReady, error } = useApp();
   const navigate = useNavigate();
   const [sources, setSources] = useState<SourceDocument[]>([]);
+  const [total, setTotal] = useState<number | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [sort, setSort] = useState<SortMode>('default');
-  const [followed, setFollowed] = useState(false);
+  useSyncExternalStore(subscribePrefs, getPrefsVersion);
+  const followed = isQuestionFollowed();
+  const topics = followedTopics();
 
   useEffect(() => {
     let cancelled = false;
-    api.sources(50, 0).then((res) => {
-      if (!cancelled) setSources(res.sources);
+    api.sources(PAGE_SIZE, 0).then((res) => {
+      if (cancelled) return;
+      setSources(res.sources);
+      setTotal(res.total);
     }).catch(() => { /* meta 错误已在全局展示 */ });
     return () => { cancelled = true; };
   }, []);
+
+  const loadMore = async () => {
+    setLoadingMore(true);
+    try {
+      const res = await api.sources(PAGE_SIZE, sources.length);
+      setSources((prev) => [...prev, ...res.sources]);
+      setTotal(res.total);
+    } catch {
+      showToast('加载更多失败，请稍后重试');
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   const sorted = useMemo(() => {
     const list = [...sources];
@@ -63,12 +86,16 @@ export default function QuestionPage() {
     return out;
   }, [sources]);
 
+  const hasMore = total === null ? false : sources.length < total;
+
   return (
     <div className="page-grid">
       <div className="page-main">
         <section className="card question-card">
           <div className="tag-row">
-            {QUESTION_TAGS.map((t) => <span key={t} className="tag">{t}</span>)}
+            {QUESTION_TAGS.map((t) => (
+              <button key={t} className="tag tag-btn" type="button" onClick={() => navigate('/search?q=' + encodeURIComponent(t))}>{t}</button>
+            ))}
           </div>
           <h1 className="question-title">本科毕业，应该直接工作还是读研？</h1>
           <p className="question-desc">
@@ -76,7 +103,11 @@ export default function QuestionPage() {
             知鉴不做统一结论，只帮你找到更值得先读的真人经验。
           </p>
           <div className="question-actions">
-            <button className={'btn ' + (followed ? 'btn-primary' : 'btn-primary')} type="button" onClick={() => setFollowed((v) => !v)}>
+            <button
+              className={followed ? 'btn btn-ghost' : 'btn btn-primary'}
+              type="button"
+              onClick={() => showToast(toggleQuestionFollowed() ? '已关注问题' : '已取消关注问题')}
+            >
               {followed ? '已关注问题' : '关注问题'}
             </button>
             <button className="btn btn-ghost" type="button" onClick={() => navigate('/reading-set')}>看阅读集</button>
@@ -92,7 +123,7 @@ export default function QuestionPage() {
             <button className={sort === 'default' ? 'feed-tab active' : 'feed-tab'} onClick={() => setSort('default')}>默认排序</button>
             <button className={sort === 'newest' ? 'feed-tab active' : 'feed-tab'} onClick={() => setSort('newest')}>最新回答</button>
             <button className={sort === 'votes' ? 'feed-tab active' : 'feed-tab'} onClick={() => setSort('votes')}>最高赞同</button>
-            <span className="feed-count">共 {sources.length} 条内容</span>
+            <span className="feed-count">共 {total ?? sources.length} 条内容</span>
           </div>
           {sorted.map((s) => {
             const date = formatDate(s.published_at);
@@ -105,7 +136,9 @@ export default function QuestionPage() {
                     <div className="feed-author-sub">{s.source_type === 'article' ? '专栏文章' : '回答'}</div>
                   </div>
                 </div>
-                <h2 className="feed-title">{s.question_title.replace(/ - 知乎$/, '')}</h2>
+                <h2 className="feed-title">
+                  <Link to={'/source/' + encodeURIComponent(s.source_id)}>{s.question_title.replace(/ - 知乎$/, '')}</Link>
+                </h2>
                 <p className="feed-excerpt">{excerpt(s.text)}</p>
                 <div className="feed-meta">
                   {typeof s.platform_signals.vote_count === 'number' && (
@@ -121,6 +154,13 @@ export default function QuestionPage() {
             );
           })}
           {sources.length === 0 && <p className="feed-empty">正在加载来源内容…</p>}
+          {hasMore && (
+            <div className="feed-more">
+              <button className="btn btn-ghost" type="button" onClick={loadMore} disabled={loadingMore}>
+                {loadingMore ? '加载中…' : '加载更多（还有 ' + ((total ?? 0) - sources.length) + ' 条）'}
+              </button>
+            </div>
+          )}
         </section>
       </div>
 
@@ -129,15 +169,30 @@ export default function QuestionPage() {
         <section className="card rail-card">
           <h3 className="rail-title">相关问题</h3>
           <ul className="rail-list">
-            {relatedQuestions.map((q) => <li key={q}>{q}</li>)}
+            {relatedQuestions.map((q) => (
+              <li key={q}>
+                <button type="button" className="rail-link" onClick={() => navigate('/search?q=' + encodeURIComponent(q))}>{q}</button>
+              </li>
+            ))}
           </ul>
         </section>
         <section className="card rail-card">
           <h3 className="rail-title">相关话题</h3>
           <ul className="rail-topics">
-            <li><span><span className="hash">#</span> 考研经验</span><button className="btn-mini" type="button">关注</button></li>
-            <li><span><span className="hash">#</span> 校招经验</span><button className="btn-mini" type="button">关注</button></li>
-            <li><span><span className="hash">#</span> 职业发展</span><button className="btn-mini" type="button">关注</button></li>
+            {['考研经验', '校招经验', '职业发展'].map((t) => (
+              <li key={t}>
+                <button type="button" className="rail-link" onClick={() => navigate('/search?q=' + encodeURIComponent(t))}>
+                  <span className="hash">#</span> {t}
+                </button>
+                <button
+                  className={'btn-mini' + (topics.includes(t) ? ' followed' : '')}
+                  type="button"
+                  onClick={() => showToast(toggleTopic(t) ? '已关注话题「' + t + '」' : '已取消关注话题')}
+                >
+                  {topics.includes(t) ? '已关注' : '关注'}
+                </button>
+              </li>
+            ))}
           </ul>
         </section>
       </div>

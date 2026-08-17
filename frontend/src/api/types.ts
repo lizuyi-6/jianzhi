@@ -65,6 +65,8 @@ export interface SourceDocument {
   };
   source_mode: 'official_api' | 'official_api_search' | 'fixture';
   retrieved_at?: string;
+  retrieved_queries?: string[];
+  retrieved_ranks?: number[];
 }
 
 export interface Meta {

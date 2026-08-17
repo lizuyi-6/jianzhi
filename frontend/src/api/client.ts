@@ -36,6 +36,11 @@ export const api = {
     request<{ sources: SourceDocument[]; total: number }>('/api/v1/sources?limit=' + limit + '&offset=' + offset),
   source: (sourceId: string) =>
     request<{ source: SourceDocument }>('/api/v1/sources/' + encodeURIComponent(sourceId)),
+  search: (query: string, count = 10) =>
+    request<{ sources: SourceDocument[]; has_more: boolean; cached: boolean }>('/api/v1/search', {
+      method: 'POST',
+      body: JSON.stringify({ query, count }),
+    }),
   lens: (questionKey = QUESTION_KEY) =>
     request<{ lens: DiscussionLens }>('/api/v1/lens', {
       method: 'POST',

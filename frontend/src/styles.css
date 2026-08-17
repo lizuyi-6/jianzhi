@@ -381,3 +381,59 @@ button { font-family: inherit; cursor: pointer; }
   .role-grid { grid-template-columns: minmax(0, 1fr); }
   .sidenav { display: none; }
 }
+
+/* ---------- 交互补充：toast / 通知 / 列表页 / 话题 ---------- */
+.toast {
+  position: fixed; bottom: 36px; left: 50%; transform: translateX(-50%);
+  background: rgba(18, 18, 18, 0.88); color: #fff; font-size: 14px;
+  padding: 10px 20px; border-radius: 8px; z-index: 200;
+  animation: toast-in 0.18s ease;
+}
+@keyframes toast-in { from { transform: translate(-50%, 8px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+
+.bell-wrap { position: relative; }
+.bell-panel {
+  position: absolute; right: 0; top: 34px; width: 240px;
+  background: #fff; border: 1px solid var(--border); border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(18, 18, 18, 0.12); padding: 14px 16px; z-index: 60;
+}
+.bell-title { font-weight: 700; font-size: 14px; margin-bottom: 6px; }
+.bell-empty { color: var(--text-3); font-size: 13px; margin: 0; }
+
+.tag-btn { border: none; cursor: pointer; }
+.tag-btn:hover { background: #e0eafc; }
+
+.topic-link {
+  border: none; background: none; padding: 0; font-size: 14px; color: var(--text-2);
+  display: inline-flex; align-items: center; gap: 6px; cursor: pointer; flex: 1; text-align: left;
+}
+.topic-link:hover { color: var(--blue); }
+.topic-star { border: none; background: none; color: #c3cdd9; font-size: 14px; padding: 0 2px; }
+.topic-star.starred { color: #f5a623; }
+
+.rail-link {
+  border: none; background: none; padding: 0; font-size: 14px; color: var(--text-2);
+  text-align: left; cursor: pointer; line-height: 1.6;
+}
+.rail-link:hover { color: var(--blue); }
+
+.feed-title a:hover { color: var(--blue); }
+.feed-more { display: flex; justify-content: center; padding: 16px; }
+
+.search-meta { color: var(--text-3); font-size: 13px; margin: 0; }
+.search-provenance { color: var(--text-3); font-size: 12px; text-align: center; }
+
+.list-subtitle { font-size: 14px; font-weight: 700; margin: 18px 0 8px; }
+.list-head { display: flex; align-items: center; justify-content: space-between; }
+.list-row {
+  display: flex; align-items: center; gap: 14px;
+  padding: 10px 0; border-bottom: 1px dashed var(--border);
+}
+.list-row:last-child { border-bottom: none; }
+.list-link { flex: 1; font-size: 14.5px; }
+.list-link:hover { color: var(--blue); }
+.list-link .hash { color: var(--blue); font-weight: 700; }
+.list-time { color: var(--text-3); font-size: 12.5px; }
+.list-empty { color: var(--text-3); font-size: 13.5px; }
+
+.collect-btn { margin-left: auto; }
