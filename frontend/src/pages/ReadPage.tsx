@@ -193,7 +193,7 @@ export default function ReadPage() {
               {card.unknown_dimensions.map((id) => (
                 <p key={id} className="why-line why-unknown">
                   <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.4 2.3c-.8.4-.9 1-.9 1.7"/><circle cx="12" cy="16.5" r=".5" fill="currentColor"/></svg>
-                  {dimName(id)}（原文未提及，不做推测）
+                  {dimName(id)}（当前检索片段未提及，不做推测）
                 </p>
               ))}
             </div>
@@ -201,12 +201,12 @@ export default function ReadPage() {
 
           {anchored.length > 0 && (
             <div className="why-section">
-              <h4>原文依据</h4>
+              <h4>来源依据</h4>
               {anchored.map((e) => (
                 <a key={e.evidence_id} className={'evidence-item' + (e.valid ? '' : ' invalid')} href={'#ev-' + e.index} id={'evidence-' + e.index}>
                   <span className="evidence-index">[{e.index}]</span>
                   <span className="evidence-quote">{e.quote}</span>
-                  <span className="evidence-field">{dimensionLabel(e.field)}{e.valid ? '' : ' · 引用与原文位置不符'}</span>
+                  <span className="evidence-field">{dimensionLabel(e.field)}{e.valid ? '' : ' · 引用与当前来源片段位置不符'}</span>
                 </a>
               ))}
             </div>

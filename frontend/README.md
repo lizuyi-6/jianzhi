@@ -32,8 +32,8 @@ npm run dev        # http://localhost:5173，/api 代理到 localhost:3001
 
 - 不输出唯一结论：阅读集三卡只承担不同角色，没有总榜排序。
 - 每条事实都带 Evidence：阅读视图只高亮 start/end 与 quote 精确匹配的证据，
-  不匹配的证据在右侧面板标注"引用与原文位置不符"，不强行渲染。
-- Unknown 不做推测：未知维度明确展示"原文未提及，不做推测"。
+  不匹配的证据在右侧面板标注"引用与当前来源片段位置不符"，不强行渲染。
+- Unknown 不做推测：未知维度明确展示"当前检索片段未提及，不做推测"——只能证明当前检索片段未提及，不宣称完整原回答未提及。
 - B 位允许为空：空位展示真实的空缺说明，绝不伪造反向经验。
 - provenance 常驻：页面保留"知乎官方搜索 API（official_api_search）"标识。
 - 作者背景不补全：API 未返回作者名时显示"知乎用户"，不生成头像外的任何身份信息。
@@ -54,5 +54,15 @@ npm run verify:interactions  # 交互覆盖：关注/收藏/历史/搜索/分页
 npm run verify:all           # 两个套件一起跑
 ~~~
 
+### 发布门禁（release gate）
+
+~~~bash
+npm run build
+npm run preview              # 生产构建预览在 localhost:4173（/api 代理到 3001）
+npm run verify:prod          # 针对生产构建跑 Golden Flow
+~~~
+
+verify:prod 额外断言：生产环境里「看阅读集（dev）」入口数量为 0。
+
 verify 套件断言产品不变量：judge 路径无绕过入口、Golden 三角色齐备、
-Evidence 高亮数与原文依据一一对应、无失效引用、控制台零错误。
+Evidence 高亮数与来源依据一一对应、无失效引用、Unknown 文案边界、控制台零错误。

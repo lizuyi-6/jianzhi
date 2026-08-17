@@ -8,6 +8,7 @@ const { chromium } = require('playwright');
 
 const FRONTEND = process.env.FRONTEND_URL || 'http://localhost:5173';
 const BACKEND = process.env.BACKEND_URL || 'http://localhost:3001';
+const IS_PROD = process.env.PROD === '1';
 
 const results = [];
 function check(name, ok, detail) {
@@ -39,7 +40,11 @@ async function reachable(url) {
   await page.goto(FRONTEND + '/', { waitUntil: 'networkidle' });
   const devShortcut = await page.getByText('看阅读集', { exact: false }).count();
   check('问题页加载', await page.locator('.question-title').count() === 1);
-  check('judge 路径无快捷入口', devShortcut <= 1, '快捷按钮数=' + devShortcut + '（dev mode 允许 1 个带标注的调试入口）');
+  if (IS_PROD) {
+    check('生产构建完全无快捷入口', devShortcut === 0, '快捷按钮数=' + devShortcut);
+  } else {
+    check('judge 路径无快捷入口', devShortcut <= 1, '快捷按钮数=' + devShortcut + '（dev mode 允许 1 个带标注的调试入口）');
+  }
   check('主入口存在', await page.getByText('按我的情况看').count() >= 1);
 
   // 2. 条件抽屉：真实统计 + 选择 Golden 条件
@@ -64,16 +69,26 @@ async function reachable(url) {
   check('无警告', warnings === 0);
   check('TA 的选择有 Evidence 引用', await page.locator('.cmp-decision').count() >= 2);
 
-  // 4. 阅读视图：Evidence 高亮与原文依据一一对应
+  // 4. 阅读视图：Evidence 高亮与来源依据一一对应
   await page.locator('.role-card:not(.role-empty)').first().click();
   await page.waitForSelector('.why-panel');
   await page.waitForTimeout(500);
   const marks = await page.locator('.ev-mark').count();
   const refs = await page.locator('.evidence-item').count();
   const invalid = await page.locator('.evidence-item.invalid').count();
-  check('Evidence 高亮数 = 原文依据数', marks === refs && marks > 0, marks + ' vs ' + refs);
+  check('Evidence 高亮数 = 来源依据数', marks === refs && marks > 0, marks + ' vs ' + refs);
   check('无失效引用', invalid === 0);
-  check('Unknown 不做推测', (await page.locator('.why-unknown').count()) === 0 || true);
+  // C 卡（经典视角）在 Golden 下 unknown_dimensions 非空，用它真正走 Unknown 路径
+  await page.goto(FRONTEND + '/read/CLASSIC');
+  await page.waitForSelector('.why-panel');
+  await page.waitForTimeout(400);
+  const unknownTexts = await page.locator('.why-unknown').allTextContents();
+  check(
+    'Unknown 不做推测',
+    unknownTexts.length > 0 && unknownTexts.every((t) => t.includes('当前检索片段未提及') && t.includes('不做推测')),
+    unknownTexts.length + ' 处 Unknown 文案',
+  );
+  check('空引用不伪造', (await page.locator('.evidence-item.invalid').count()) === 0);
 
   // 5. 控制台零错误
   check('控制台零错误', consoleErrors.length === 0, consoleErrors.slice(0, 2).join(' | '));

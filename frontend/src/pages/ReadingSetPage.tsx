@@ -82,7 +82,7 @@ function RoleCard({ card, source }: { card: RenderCard; source: SourceDocument |
         {card.unknown_dimensions.length > 0 && (
           <div className="cmp-row">
             <span className="cmp-tag cmp-unknown">未知</span>
-            <span className="cmp-text">{card.unknown_dimensions.map(dimName).join('、')}（原文未提及，不做推测）</span>
+            <span className="cmp-text">{card.unknown_dimensions.map(dimName).join('、')}（当前检索片段未提及，不做推测）</span>
           </div>
         )}
       </div>
