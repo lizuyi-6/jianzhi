@@ -166,7 +166,7 @@ export default function LensDrawer() {
                     onClick={() => toggleRejected(dim.id)}
                     title="该维度与你的情况无关，比较时忽略"
                   >
-                    不重要
+                    都不像 / 不重要
                   </button>
                 </span>
               </div>
