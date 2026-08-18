@@ -1,0 +1,201 @@
+.judge-problem-hook {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: -4px 0 18px;
+  padding: 15px 16px;
+  border: 1px solid #dfe8ff;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f7faff 0%, #fbf8ff 100%);
+}
+.judge-problem-hook strong { font-size: 20px; line-height: 1.4; letter-spacing: .1px; }
+.judge-problem-hook > span:last-child { color: var(--text-2); font-size: 13.5px; }
+.judge-problem-label {
+  width: fit-content;
+  color: #5f46c7;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .7px;
+  text-transform: uppercase;
+}
+
+.judge-lens-card {
+  position: sticky;
+  top: 72px;
+  border: 1px solid #d8e2ff;
+  box-shadow: 0 8px 28px rgba(62, 79, 145, .09);
+}
+.judge-kicker,
+.judge-proof-kicker {
+  color: #6a50d8;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .5px;
+  margin-bottom: 6px;
+}
+.judge-steps { gap: 10px; }
+.judge-steps li { align-items: flex-start; line-height: 1.55; }
+.judge-step-index {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(84, 74, 220, .1);
+  color: #5947cc;
+  font-size: 11px;
+  font-weight: 800;
+}
+.judge-primary-cta {
+  box-shadow: 0 7px 18px rgba(77, 76, 226, .18);
+}
+
+.judge-step-badge {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: #f0edff;
+  color: #6450c7;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .35px;
+}
+.judge-drawer-title { font-size: 23px; margin-top: 12px; }
+.judge-drawer-subtitle { color: var(--text-2); line-height: 1.7; }
+.judge-drawer-subtitle strong { color: var(--text); }
+.judge-disagreement-section {
+  padding: 14px 14px 4px;
+  background: rgba(255, 255, 255, .72);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.judge-dim-row { grid-template-columns: 22px 76px 1fr; }
+.judge-dim-row .why-disclosure { grid-column: 2 / 4; }
+.judge-context-head { display: flex; align-items: center; justify-content: space-between; }
+.judge-context-head > span { color: var(--text-3); font-size: 11.5px; }
+.judge-drawer-finish {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 8px 0 10px;
+  padding: 10px 12px;
+  background: #fff;
+  border-left: 3px solid #6b54df;
+  color: var(--text-2);
+  font-size: 12.5px;
+}
+.judge-finish-label { color: var(--text); font-weight: 700; }
+
+.judge-edit-condition {
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #eef3fd;
+}
+.judge-reading-sub {
+  color: var(--text-2);
+  background: #f7f8fc;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 9px 12px;
+}
+.judge-change-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #dcd3ff;
+  box-shadow: 0 9px 24px rgba(91, 74, 158, .09);
+}
+.judge-change-card::after {
+  content: '';
+  position: absolute;
+  width: 160px;
+  height: 160px;
+  right: -80px;
+  top: -80px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(109, 89, 225, .11), transparent 70%);
+}
+.judge-change-title { font-size: 20px; margin-top: 9px; color: #44337e; }
+.judge-change-lead { margin: -4px 0 10px; color: var(--text-2); font-size: 13px; }
+.role-card-changed {
+  position: relative;
+  outline: 2px solid rgba(105, 83, 220, .24);
+  animation: judge-card-pop .55s ease;
+}
+@keyframes judge-card-pop {
+  0% { transform: translateY(3px) scale(.985); box-shadow: 0 0 0 rgba(0,0,0,0); }
+  100% { transform: none; }
+}
+.judge-card-changed-badge {
+  width: fit-content;
+  margin: -6px 0 0 auto;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #efeaff;
+  color: #5d46c4;
+  font-size: 10.5px;
+  font-weight: 700;
+}
+.judge-evidence-cta {
+  color: #5d46c4;
+  background: #f1edff;
+  border-color: #dfd6ff;
+  font-weight: 600;
+}
+.judge-next-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 15px;
+  padding: 13px 15px;
+  border: 1px dashed #cbd6ef;
+  border-radius: 10px;
+  background: #fbfcff;
+  color: var(--text-2);
+  font-size: 13px;
+}
+.judge-next-step strong { color: var(--text); }
+
+.judge-proof-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 13px 16px;
+  border: 1px solid #d7e5ff;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f4f8ff, #faf8ff);
+}
+.judge-proof-banner > div { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.judge-proof-banner strong { font-size: 15px; }
+.judge-proof-banner > span { max-width: 360px; color: var(--text-3); font-size: 12px; line-height: 1.6; }
+.judge-read-card { box-shadow: 0 3px 14px rgba(18, 18, 18, .07); }
+.judge-ev-mark {
+  background: linear-gradient(transparent 48%, #c8dcff 48%);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+.judge-why-panel {
+  position: sticky;
+  top: 72px;
+  border: 1px solid #dfe7f6;
+  box-shadow: 0 8px 24px rgba(51, 72, 115, .07);
+}
+.judge-evidence-section .evidence-item {
+  border-left: 3px solid #568cf2;
+  transition: transform .12s ease, border-color .12s ease;
+}
+.judge-evidence-section .evidence-item:hover {
+  transform: translateX(-2px);
+  border-color: #8bb0f5;
+}
+
+@media (max-width: 1080px) {
+  .judge-lens-card, .judge-why-panel { position: static; }
+  .judge-proof-banner { align-items: flex-start; flex-direction: column; }
+  .judge-next-step { align-items: flex-start; flex-direction: column; }
+}

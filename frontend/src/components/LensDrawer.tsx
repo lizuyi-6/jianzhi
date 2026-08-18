@@ -4,7 +4,6 @@ import { useApp } from '../state/AppContext';
 import { dimensionLabel, valueLabel } from '../i18n/labels';
 import type { DiscussionDimension } from '../api/types';
 
-// P0-06：「为什么这么说？」必须回到对应原文/来源片段——这里展示跨立场证据对（原文引句 + 来源链接）
 function WhyDisclosure({ dimension }: { dimension: DiscussionDimension }) {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
@@ -12,13 +11,13 @@ function WhyDisclosure({ dimension }: { dimension: DiscussionDimension }) {
   return (
     <div className="why-disclosure">
       <button type="button" className="why-toggle" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
-        为什么这么说？
+        看原文依据
         <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" style={{ transform: open ? 'rotate(180deg)' : undefined }}><path d="m6 9 6 6 6-6"/></svg>
       </button>
       {open && (
         <div className="why-detail">
           <p className="why-detail-line">
-            该条件在 {dimension.supporting_sources.length} 条通过 Evidence 校验的经验中被提及。下面是 {dimension.support_examples.length} 条跨立场证据（不同取值、不同选择，两两成对）；另有 {dimension.counterexample_sources.length} 条在相近条件下做出不同选择，作为反例保留、不隐藏。
+            这个条件之所以被提出来，不是因为 AI 觉得它“重要”，而是因为它在不同选择的真人经验里反复出现。下面的引句都能回到来源片段。
           </p>
           {dimension.support_examples.length > 0 && (
             <ul className="why-examples">
@@ -32,7 +31,7 @@ function WhyDisclosure({ dimension }: { dimension: DiscussionDimension }) {
                   >
                     「{example.quote}」
                   </button>
-                  <span className="example-meta">TA 的条件：{valueLabel(example.value)} · TA 的选择：{valueLabel(example.decision)}</span>
+                  <span className="example-meta">条件：{valueLabel(example.value)} · 选择：{valueLabel(example.decision)}</span>
                 </li>
               ))}
             </ul>
@@ -45,15 +44,14 @@ function WhyDisclosure({ dimension }: { dimension: DiscussionDimension }) {
 
 export default function LensDrawer() {
   const {
-    drawerOpen, closeDrawer, lens, meta, conditions, rejectedDimensions, customCondition,
-    setCondition, clearCondition, toggleRejected, setCustomCondition, generateReadingSet, packetLoading, error,
+    drawerOpen, closeDrawer, lens, meta, conditions, rejectedDimensions,
+    setCondition, clearCondition, toggleRejected, generateReadingSet, packetLoading, error,
   } = useApp();
   const navigate = useNavigate();
   const drawerRef = useRef<HTMLElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const restoreFocus = useRef<HTMLElement | null>(null);
 
-  // P2-09：对话框可访问性——Escape 关闭、焦点进入、关闭后归还焦点
   useEffect(() => {
     if (!drawerOpen) return;
     restoreFocus.current = document.activeElement as HTMLElement | null;
@@ -81,7 +79,7 @@ export default function LensDrawer() {
   return (
     <div className="drawer-overlay" onClick={closeDrawer}>
       <aside
-        className="drawer"
+        className="drawer judge-drawer"
         role="dialog"
         aria-modal="true"
         aria-label="知鉴 AI 透镜：分歧条件与你的情况"
@@ -97,20 +95,21 @@ export default function LensDrawer() {
           <button className="drawer-close" type="button" onClick={closeDrawer} aria-label="关闭" ref={closeRef}>×</button>
         </div>
 
-        <h2 className="drawer-title">大家真正分歧在哪？</h2>
-        <p className="drawer-subtitle">这些回答主要在下面几种条件下给出了不同判断。</p>
+        <div className="judge-step-badge">STEP 1 · 先看分歧，再填自己</div>
+        <h2 className="drawer-title judge-drawer-title">同一个问题，答案为什么会相反？</h2>
+        <p className="drawer-subtitle judge-drawer-subtitle">知鉴不先总结“大家怎么说”，而是找出：<strong>哪些条件一变，人们的选择也跟着变。</strong></p>
 
         {meta && (
           <div className="drawer-info">
             <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5"/></svg>
-            共找到 {meta.source_count} 条来源内容，其中 {meta.lens.experience_records} 条通过 Evidence 校验进入透镜分析，基于这些经验提炼出 {dimensions.length} 个候选分歧维度
+            {meta.source_count} 条来源内容 → {meta.lens.experience_records} 条通过 Evidence 校验的真人经验 → {dimensions.length} 个候选分歧条件
           </div>
         )}
 
-        <section className="drawer-section">
-          <h3 className="drawer-section-title">主要分歧条件</h3>
+        <section className="drawer-section judge-disagreement-section">
+          <h3 className="drawer-section-title">大家真正分歧在哪？</h3>
           {dimensions.map((dim, i) => (
-            <div key={dim.id} className="dim-row">
+            <div key={dim.id} className="dim-row judge-dim-row">
               <span className="dim-index">{i + 1}</span>
               <span className="dim-label">{dimensionLabel(dim.id, dim.label)}</span>
               <span className="dim-pills">
@@ -124,9 +123,12 @@ export default function LensDrawer() {
           {dimensions.length === 0 && <p className="drawer-empty">暂未提炼出可靠分歧条件。</p>}
         </section>
 
-        <section className="drawer-section">
-          <h3 className="drawer-section-title">你的情况</h3>
-          <p className="drawer-section-sub">选择更符合你当前状况的选项；不确定可以留空，知鉴会按「未知」处理，不做推测。</p>
+        <section className="drawer-section judge-your-context">
+          <div className="judge-context-head">
+            <h3 className="drawer-section-title">把你放进这些分歧里</h3>
+            <span>选 1–3 个就够了</span>
+          </div>
+          <p className="drawer-section-sub">不知道就留空。没有证据的地方，知鉴会明确写“未知”，不会替你补故事。</p>
           {dimensions.map((dim, i) => {
             const selected = conditions[dim.id];
             const rejected = rejectedDimensions.includes(dim.id);
@@ -150,7 +152,6 @@ export default function LensDrawer() {
                       </button>
                     );
                   })}
-                  {/* F-005：不确定 / 都不是 / 不重要 */}
                   <button
                     type="button"
                     className={'pill pill-btn pill-muted' + (!selected && !rejected ? ' pill-active' : '')}
@@ -171,30 +172,19 @@ export default function LensDrawer() {
               </div>
             );
           })}
-          <div className="custom-condition">
-            <label className="custom-condition-label" htmlFor="custom-condition-input">还有什么想补充的情况？（可选，仅用于筛选，不影响证据）</label>
-            <textarea
-              id="custom-condition-input"
-              className="custom-condition-input"
-              rows={2}
-              maxLength={500}
-              placeholder="例如：家里希望我回老家；手里 Offer 有时间限制……"
-              value={customCondition ?? ''}
-              onChange={(e) => setCustomCondition(e.target.value)}
-            />
-          </div>
         </section>
 
         {error && <p className="drawer-error">生成失败：{error.message}（{error.code}）</p>}
 
-        <button className="btn btn-lens drawer-cta" type="button" onClick={onSubmit} disabled={packetLoading}>
+        <div className="judge-drawer-finish">
+          <span className="judge-finish-label">接下来不是“给答案”</span>
+          <span>而是给你三种不同角色的真人经验：可比较 / 反向 / 经典。</span>
+        </div>
+        <button className="btn btn-lens drawer-cta judge-primary-cta" type="button" onClick={onSubmit} disabled={packetLoading}>
           <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2l1.8 5.6L19 9l-5.2 1.4L12 16l-1.8-5.6L5 9l5.2-1.4Z"/></svg>
           {packetLoading ? '正在生成…' : '先看这几篇'}
         </button>
-        <p className="drawer-cta-note">
-          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v5m0 3v.5"/></svg>
-          基于你的情况构造可比较、反向和经典三类视角的阅读集；会保留与你相似但选择不同的真人经验，不替你做最终判断
-        </p>
+        <p className="drawer-cta-note">不会输出“你应该读研 / 你应该工作”。判断权留给你。</p>
       </aside>
     </div>
   );
