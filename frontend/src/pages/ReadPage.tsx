@@ -16,7 +16,6 @@ interface AnchoredEvidence extends EvidenceSpan {
 
 function useHighlightedText(text: string, evidence: EvidenceSpan[]): { body: ReactNode; anchored: AnchoredEvidence[] } {
   return useMemo(() => {
-    // 只信任 start/end 与 quote 精确匹配的证据（与后端校验规则一致）
     const anchored: AnchoredEvidence[] = evidence
       .map((e) => ({ ...e, index: 0, valid: text.slice(e.start, e.end) === e.quote }))
       .sort((a, b) => a.start - b.start);
@@ -29,7 +28,7 @@ function useHighlightedText(text: string, evidence: EvidenceSpan[]): { body: Rea
       if (!e.valid || e.start < cursor) continue;
       if (e.start > cursor) nodes.push(<span key={key++}>{text.slice(cursor, e.start)}</span>);
       nodes.push(
-        <mark key={key++} className="ev-mark" id={'ev-' + e.index}>
+        <mark key={key++} className="ev-mark judge-ev-mark" id={'ev-' + e.index}>
           {text.slice(e.start, e.end)}
           <a className="ev-ref" href={'#evidence-' + e.index}>[{e.index}]</a>
         </mark>,
@@ -109,7 +108,15 @@ export default function ReadPage() {
           </button>
         </div>
 
-        <section className="card read-card">
+        <div className="judge-proof-banner">
+          <div>
+            <span className="judge-step-badge">STEP 3 · Evidence</span>
+            <strong>AI 说“这篇值得先读”，证据就在下面。</strong>
+          </div>
+          <span>{anchored.length} 处引用已绑定到来源片段中的精确位置；点右侧编号可以来回核对。</span>
+        </div>
+
+        <section className="card read-card judge-read-card">
           <h1 className="read-title">{card?.title.replace(/ - 知乎$/, '') ?? '加载中…'}</h1>
 
           <div className="feed-author read-author">
@@ -147,12 +154,13 @@ export default function ReadPage() {
       </div>
 
       <div className="page-rail">
-        <section className="card why-panel">
+        <section className="card why-panel judge-why-panel">
+          <div className="judge-proof-kicker">不是 AI 的“解释”，是可回查的依据</div>
           <h3 className="why-panel-title">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2l1.8 5.6L19 9l-5.2 1.4L12 16l-1.8-5.6L5 9l5.2-1.4Z"/></svg>
-            为什么这么说？
+            为什么这篇会出现在阅读集？
           </h3>
-          <p className="why-panel-sub">这条来源为什么值得先读</p>
+          <p className="why-panel-sub">相同 / 不同 / 未知都来自结构化比较；下面的每个依据都能点回左侧原文。</p>
           {card && (
             <div className="why-badges">
               {card.why_read_codes.map((code) => (
@@ -176,7 +184,6 @@ export default function ReadPage() {
             </div>
           )}
 
-          {/* P1-08：双边差异展示 */}
           {card && card.different_facts.length > 0 && (
             <div className="why-section">
               <h4>与你不同</h4>
@@ -202,8 +209,8 @@ export default function ReadPage() {
           )}
 
           {anchored.length > 0 && (
-            <div className="why-section">
-              <h4>来源依据</h4>
+            <div className="why-section judge-evidence-section">
+              <h4>来源依据 · {anchored.length} 处</h4>
               {anchored.map((e) => (
                 <a
                   key={e.evidence_id}
@@ -214,7 +221,7 @@ export default function ReadPage() {
                 >
                   <span className="evidence-index">[{e.index}]</span>
                   <span className="evidence-quote">{e.quote}</span>
-                  <span className="evidence-field">{dimensionLabel(e.field)}{e.valid ? '' : ' · 引用与当前来源片段位置不符'}</span>
+                  <span className="evidence-field">{dimensionLabel(e.field)}{e.valid ? ' · 已定位' : ' · 引用与当前来源片段位置不符'}</span>
                 </a>
               ))}
             </div>
@@ -222,7 +229,7 @@ export default function ReadPage() {
 
           {card && (
             <a className="why-origin" href={card.url} target="_blank" rel="noreferrer" onClick={() => api.event('source_open', { source_id: card.source_id })}>
-              {source?.source_type === 'article' ? '查看原文' : '查看原回答'}
+              {source?.source_type === 'article' ? '去知乎查看原文' : '去知乎查看原回答'}
               <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 6 6 6-6 6"/></svg>
             </a>
           )}
