@@ -92,7 +92,12 @@ export default function QuestionPage() {
   return (
     <div className="page-grid">
       <div className="page-main">
-        <section className="card question-card">
+        <section className="card question-card judge-question-card">
+          <div className="judge-problem-hook">
+            <span className="judge-problem-label">知鉴想解决的不是“缺答案”</span>
+            <strong>100 个回答，不该只剩一个 AI 答案。</strong>
+            <span>真正缺的是：这些经验分别在什么条件下成立，哪几个“过来人”更值得你先听。</span>
+          </div>
           <div className="tag-row">
             {QUESTION_TAGS.map((t) => (
               <button key={t} className="tag tag-btn" type="button" onClick={() => navigate('/search?q=' + encodeURIComponent(t))}>{t}</button>
@@ -123,7 +128,6 @@ export default function QuestionPage() {
         <section className="card feed-card">
           <div className="feed-tabs">
             <button className={sort === 'default' ? 'feed-tab active' : 'feed-tab'} onClick={() => setSort('default')}>默认排序</button>
-            {/* P1-12：这是官方搜索召回的跨问题内容，不是单一问题的回答流 */}
             <button className={sort === 'newest' ? 'feed-tab active' : 'feed-tab'} onClick={() => setSort('newest')}>最新内容</button>
             <button className={sort === 'votes' ? 'feed-tab active' : 'feed-tab'} onClick={() => setSort('votes')}>最高赞同</button>
             <span className="feed-count">共 {total ?? sources.length} 条内容</span>
