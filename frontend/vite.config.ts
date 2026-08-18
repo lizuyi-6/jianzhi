@@ -1,10 +1,11 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
+const backendOrigin = process.env.BACKEND_ORIGIN ?? 'http://localhost:3001';
 const apiProxy = {
-  '/api': { target: 'http://localhost:3001', changeOrigin: true },
-  '/health': { target: 'http://localhost:3001', changeOrigin: true },
-  '/ready': { target: 'http://localhost:3001', changeOrigin: true },
+  '/api': { target: backendOrigin, changeOrigin: true },
+  '/health': { target: backendOrigin, changeOrigin: true },
+  '/ready': { target: backendOrigin, changeOrigin: true },
 };
 
 export default defineConfig({

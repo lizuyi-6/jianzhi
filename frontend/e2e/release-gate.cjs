@@ -39,12 +39,29 @@ function runVerify(env) {
 }
 
 (async () => {
+  // 自起后端（同一原则：绝不依赖任何已在运行的服务）
+  const backendPort = await freePort();
+  const backendOrigin = 'http://localhost:' + backendPort;
+  const backendBin = path.join(__dirname, '..', '..', 'backend', 'node_modules', 'tsx', 'dist', 'cli.mjs');
+  const backend = spawn(process.execPath, [backendBin, 'src/server.ts'], {
+    cwd: path.join(__dirname, '..', '..', 'backend'),
+    stdio: 'ignore', shell: false, detached: true,
+    env: { ...process.env, PORT: String(backendPort), HOST: '127.0.0.1' },
+  });
+  const backendReady = await waitFor(backendOrigin + '/ready', 45000);
+  if (!backendReady) {
+    console.error('[release-gate] FAIL：自起后端未就绪（端口 ' + backendPort + '）');
+    try { process.kill(-backend.pid, 'SIGTERM'); } catch { /* already gone */ }
+    process.exit(2);
+  }
+  console.log('[release-gate] 自起后端：' + backendOrigin);
+
   const port = await freePort();
   const previewUrl = 'http://localhost:' + port;
   console.log('[release-gate] 使用专用动态端口自起 preview：' + previewUrl + '（strictPort，不复用任何已有服务）');
 
   const viteBin = path.join(__dirname, '..', 'node_modules', 'vite', 'bin', 'vite.js');
-  const preview = spawn(process.execPath, [viteBin, 'preview', '--host', '127.0.0.1', '--port', String(port), '--strictPort'], { stdio: 'ignore', shell: false, detached: true });
+  const preview = spawn(process.execPath, [viteBin, 'preview', '--host', '127.0.0.1', '--port', String(port), '--strictPort'], { stdio: 'ignore', shell: false, detached: true, env: { ...process.env, BACKEND_ORIGIN: backendOrigin } });
 
   let exitCode = 0;
   try {
@@ -54,7 +71,7 @@ function runVerify(env) {
       exitCode = 2;
     } else {
       console.log('[release-gate] 对刚构建的生产产物执行 Golden Flow …');
-      const code = await runVerify({ PROD: '1', FRONTEND_URL: previewUrl });
+      const code = await runVerify({ PROD: '1', FRONTEND_URL: previewUrl, BACKEND_URL: backendOrigin });
       if (code !== 0) {
         console.error('[release-gate] FAIL：生产 Golden Flow 未通过');
         exitCode = code;
@@ -63,8 +80,10 @@ function runVerify(env) {
       }
     }
   } finally {
-    // 无论成败都清理自己启动的 preview（detached 进程组整体终止）
-    try { process.kill(-preview.pid, 'SIGTERM'); } catch { try { preview.kill('SIGTERM'); } catch { /* already gone */ } }
+    // 无论成败都清理自己启动的 preview 与 backend（detached 进程组整体终止）
+    for (const child of [preview, backend]) {
+      try { process.kill(-child.pid, 'SIGTERM'); } catch { try { child.kill('SIGTERM'); } catch { /* already gone */ } }
+    }
     await new Promise((r) => setTimeout(r, 800));
   }
   process.exitCode = exitCode;
