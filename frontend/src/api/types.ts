@@ -9,6 +9,14 @@ export interface EvidenceSpan {
   field: string;
 }
 
+export interface SupportExample {
+  source_id: string;
+  value: string;
+  decision: string;
+  evidence_id: string;
+  quote: string;
+}
+
 export interface DiscussionDimension {
   id: string;
   label: string;
@@ -17,6 +25,7 @@ export interface DiscussionDimension {
   supporting_sources: string[];
   counterexample_sources: string[];
   user_answerable: boolean;
+  support_examples: SupportExample[];
 }
 
 export interface DiscussionLens {
@@ -27,6 +36,19 @@ export interface DiscussionLens {
 
 export type Role = 'COMPARABLE' | 'COUNTER_EXPERIENCE' | 'CLASSIC';
 
+export interface DifferentFact {
+  dimension: string;
+  user_value: string;
+  source_value: string;
+  evidence_id: string;
+}
+
+export interface QualitySignals {
+  vote_count: number | null;
+  comment_count: number | null;
+  authority: string | number | null;
+}
+
 export interface RenderCard {
   role: Role;
   source_id: string;
@@ -35,6 +57,8 @@ export interface RenderCard {
   same_dimensions: string[];
   different_dimensions: string[];
   unknown_dimensions: string[];
+  different_facts: DifferentFact[];
+  quality_signals: QualitySignals;
   why_read_codes: string[];
   evidence: EvidenceSpan[];
 }
@@ -74,7 +98,19 @@ export interface Meta {
   search_adapter: boolean;
   source_count: number;
   lens: { experience_records: number; ready: boolean };
+  corpus?: { questions: Array<{ key: string; title: string; decision_event: string; source_ids: number }> };
+  pipeline?: { extraction_prompt_version: string; replay_cache: string; live_model: boolean };
   capabilities: string[];
+}
+
+export type SearchMode = 'official_api_search' | 'cache' | 'local_fallback';
+
+export interface SearchResponse {
+  sources: SourceDocument[];
+  has_more: boolean;
+  cached: boolean;
+  mode?: SearchMode;
+  degraded_reason?: string;
 }
 
 export interface ApiError {

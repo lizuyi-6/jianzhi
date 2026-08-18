@@ -56,7 +56,7 @@ function check(name, ok, detail) {
 
   // 话题关注 → 关注页
   await page.goto(FRONTEND + '/', { waitUntil: 'networkidle' });
-  await page.locator('.sidenav-topic .topic-star').first().click();
+  await page.locator('.rail-topics .btn-mini').first().click();
   await page.goto(FRONTEND + '/follows');
   check('关注页含话题与问题', (await page.locator('.page-main').textContent()).includes('关注的话题'));
 
@@ -70,8 +70,8 @@ function check(name, ok, detail) {
   await page.waitForURL('**/search**');
   check('相关问题跳搜索', page.url().includes('/search?q='));
 
-  // Golden 阅读视图收藏
-  await page.evaluate(() => sessionStorage.setItem('zj-conditions', JSON.stringify({ family_pressure: 'FAMILY_PRESSURE' })));
+  // Golden 阅读视图收藏（新语料：透镜条件存于 zj-context-v2）
+  await page.evaluate(() => sessionStorage.setItem('zj-context-v2', JSON.stringify({ values: { current_opportunity: 'HAS_OFFER' }, rejected: [], custom: null })));
   await page.goto(FRONTEND + '/reading-set', { waitUntil: 'networkidle' });
   await page.waitForSelector('.role-card:not(.role-empty)');
   await page.locator('.role-card:not(.role-empty)').first().click();

@@ -1,17 +1,20 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { api, QUESTION_KEY, ApiRequestError } from '../api/client';
 import type { DiscussionLens, Meta, RenderPacket } from '../api/types';
+import { diffRenderPackets, type ChangeReport } from '../lens/diff';
 
-const STORAGE_KEY = 'zj-conditions';
+const STORAGE_KEY = 'zj-context-v2';
 
-function loadStoredConditions(): Record<string, string> {
+interface StoredContext { values: Record<string, string>; rejected: string[]; custom: string | null }
+
+function loadStoredContext(): StoredContext {
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw);
-    return parsed && typeof parsed === 'object' ? parsed as Record<string, string> : {};
+    if (!raw) return { values: {}, rejected: [], custom: null };
+    const parsed = JSON.parse(raw) as StoredContext;
+    return { values: parsed.values ?? {}, rejected: parsed.rejected ?? [], custom: parsed.custom ?? null };
   } catch {
-    return {};
+    return { values: {}, rejected: [], custom: null };
   }
 }
 
@@ -19,7 +22,11 @@ interface AppState {
   meta: Meta | null;
   lens: DiscussionLens | null;
   conditions: Record<string, string>;
+  rejectedDimensions: string[];
+  customCondition: string | null;
   packet: RenderPacket | null;
+  previousPacket: RenderPacket | null;
+  changeReport: ChangeReport | null;
   packetLoading: boolean;
   error: { code: string; message: string; requestId: string } | null;
   backendReady: boolean;
@@ -27,6 +34,9 @@ interface AppState {
   openDrawer: () => void;
   closeDrawer: () => void;
   setCondition: (dimensionId: string, value: string) => void;
+  clearCondition: (dimensionId: string) => void;
+  toggleRejected: (dimensionId: string) => void;
+  setCustomCondition: (text: string | null) => void;
   clearConditions: () => void;
   generateReadingSet: () => Promise<boolean>;
 }
@@ -34,14 +44,24 @@ interface AppState {
 const AppContext = createContext<AppState | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
+  const initial = useRef(loadStoredContext());
   const [meta, setMeta] = useState<Meta | null>(null);
   const [lens, setLens] = useState<DiscussionLens | null>(null);
-  const [conditions, setConditions] = useState<Record<string, string>>(loadStoredConditions);
+  const [conditions, setConditions] = useState<Record<string, string>>(initial.current.values);
+  const [rejectedDimensions, setRejectedDimensions] = useState<string[]>(initial.current.rejected);
+  const [customCondition, setCustomText] = useState<string | null>(initial.current.custom);
+  // 同步 ref：同一事件 tick 内「选条件 + 提交」也必须读到最新条件（修复快速连点提交旧条件的竞态）
+  const conditionsRef = useRef(initial.current.values);
+  const rejectedRef = useRef(initial.current.rejected);
+  const customRef = useRef(initial.current.custom);
   const [packet, setPacket] = useState<RenderPacket | null>(null);
+  const [previousPacket, setPreviousPacket] = useState<RenderPacket | null>(null);
+  const [changeReport, setChangeReport] = useState<ChangeReport | null>(null);
   const [packetLoading, setPacketLoading] = useState(false);
   const [error, setError] = useState<AppState['error']>(null);
   const [backendReady, setBackendReady] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const prevConditions = useRef<Record<string, string>>(initial.current.values);
 
   useEffect(() => {
     let cancelled = false;
@@ -67,24 +87,57 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(conditions)); } catch { /* ignore */ }
-  }, [conditions]);
+    try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ values: conditions, rejected: rejectedDimensions, custom: customCondition })); } catch { /* ignore */ }
+  }, [conditions, rejectedDimensions, customCondition]);
 
   const setCondition = useCallback((dimensionId: string, value: string) => {
-    setConditions((prev) => ({ ...prev, [dimensionId]: value }));
+    conditionsRef.current = { ...conditionsRef.current, [dimensionId]: value };
+    rejectedRef.current = rejectedRef.current.filter((id) => id !== dimensionId);
+    setConditions(conditionsRef.current);
+    setRejectedDimensions(rejectedRef.current);
   }, []);
 
-  const clearConditions = useCallback(() => setConditions({}), []);
+  // F-005「不确定」：清空该维度的取值，比较时按未知处理
+  const clearCondition = useCallback((dimensionId: string) => {
+    const next = { ...conditionsRef.current }; delete next[dimensionId]; conditionsRef.current = next;
+    setConditions(next);
+  }, []);
 
-  const openDrawer = useCallback(() => setDrawerOpen(true), []);
+  // F-005「都不像 / 不重要」：该维度不参与你的情况比较
+  const toggleRejected = useCallback((dimensionId: string) => {
+    const nextValues = { ...conditionsRef.current }; delete nextValues[dimensionId]; conditionsRef.current = nextValues;
+    rejectedRef.current = rejectedRef.current.includes(dimensionId) ? rejectedRef.current.filter((id) => id !== dimensionId) : [...rejectedRef.current, dimensionId];
+    setConditions(nextValues);
+    setRejectedDimensions(rejectedRef.current);
+  }, []);
+
+  const setCustomCondition = useCallback((text: string | null) => {
+    customRef.current = text && text.trim() ? text.trim().slice(0, 500) : null;
+    setCustomText(customRef.current);
+  }, []);
+
+  const clearConditions = useCallback(() => { setConditions({}); setRejectedDimensions([]); setCustomCondition(null); }, []);
+
+  const openDrawer = useCallback(() => { api.event('lens_open', {}); setDrawerOpen(true); }, []);
   const closeDrawer = useCallback(() => setDrawerOpen(false), []);
 
   const generateReadingSet = useCallback(async (): Promise<boolean> => {
+    const values = conditionsRef.current;
+    const rejected = rejectedRef.current;
+    const custom = customRef.current;
     setPacketLoading(true);
     setError(null);
+    api.event('context_submit', { values, rejected, custom });
     try {
-      const res = await api.renderPacket(conditions, QUESTION_KEY);
+      const res = await api.renderPacket(values, QUESTION_KEY, rejected, custom);
+      // P0-08：保留上一次 ReadingSet，生成结构化变化解释
+      const changedConditions = Object.keys({ ...prevConditions.current, ...values })
+        .filter((key) => (prevConditions.current[key] ?? '') !== (values[key] ?? ''));
+      if (packet) setPreviousPacket(packet);
+      setChangeReport(packet ? diffRenderPackets(packet, res.render_packet, changedConditions) : null);
+      prevConditions.current = values;
       setPacket(res.render_packet);
+      api.event('reading_set_generated', { slots: res.render_packet.cards.map((card) => card.role) });
       return true;
     } catch (e) {
       if (e instanceof ApiRequestError) {
@@ -96,13 +149,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } finally {
       setPacketLoading(false);
     }
-  }, [conditions]);
+    // packet 作为生成前的旧包参与 diff，依赖顺序有意如此
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [packet]);
 
   const value = useMemo<AppState>(() => ({
-    meta, lens, conditions, packet, packetLoading, error, backendReady,
+    meta, lens, conditions, rejectedDimensions, customCondition, packet, previousPacket, changeReport, packetLoading, error, backendReady,
     drawerOpen, openDrawer, closeDrawer,
-    setCondition, clearConditions, generateReadingSet,
-  }), [meta, lens, conditions, packet, packetLoading, error, backendReady, drawerOpen, openDrawer, closeDrawer, setCondition, clearConditions, generateReadingSet]);
+    setCondition, clearCondition, toggleRejected, setCustomCondition, clearConditions, generateReadingSet,
+  }), [meta, lens, conditions, rejectedDimensions, customCondition, packet, previousPacket, changeReport, packetLoading, error, backendReady, drawerOpen, openDrawer, closeDrawer, setCondition, clearCondition, toggleRejected, setCustomCondition, clearConditions, generateReadingSet]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }

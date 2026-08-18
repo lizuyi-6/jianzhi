@@ -1,13 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { showToast } from './Toast';
 
 export default function TopBar() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [query, setQuery] = useState('');
   const [bellOpen, setBellOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const bellRef = useRef<HTMLDivElement>(null);
+
+  // P2-08：active 状态跟随真实路由，而不是永久高亮首页
+  const isActive = (path: string) => location.pathname === path;
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -38,9 +42,9 @@ export default function TopBar() {
       <div className="topbar-inner">
         <Link to="/" className="logo">知鉴</Link>
         <nav className="topnav">
-          <Link to="/" className="topnav-item active">首页</Link>
+          <Link to="/" className={'topnav-item' + (isActive('/') ? ' active' : '')}>首页</Link>
           <span className="topnav-item muted" onClick={() => showToast('「发现」在演示版本中暂未开放')}>发现</span>
-          <Link to="/follows" className="topnav-item">关注</Link>
+          <Link to="/follows" className={'topnav-item' + (isActive('/follows') ? ' active' : '')}>关注</Link>
         </nav>
         <div className="searchbox">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>

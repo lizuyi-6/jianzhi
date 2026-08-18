@@ -23,6 +23,8 @@ const ZhihuResponseSchema = z.object({
 export type SearchOptions = { query: string; count?: number; signal?: AbortSignal };
 export type SearchResult = { sources: SourceDocument[]; has_more: boolean; source_mode: 'official_api_search' };
 
+const TIMEOUT_MS = 8_000; // P1-16：上游必须有界，不能拖垮页面
+
 export class ZhihuSearchAdapter {
   constructor(private readonly secret: string, private readonly baseUrl = 'https://developer.zhihu.com') {
     if (!secret) throw new Error('ZHIHU_ACCESS_SECRET is required');
@@ -31,9 +33,22 @@ export class ZhihuSearchAdapter {
     const count = Math.max(1, Math.min(options.count ?? 10, 10));
     const url = new URL('/api/v1/content/zhihu_search', this.baseUrl);
     url.searchParams.set('Query', options.query); url.searchParams.set('Count', String(count));
-    const init: RequestInit = { headers: { Authorization: 'Bearer ' + this.secret, 'X-Request-Timestamp': String(Math.floor(Date.now() / 1000)), Accept: 'application/json' } };
-    if (options.signal) init.signal = options.signal;
-    const response = await fetch(url, init);
+    const request = (signal: AbortSignal) => fetch(url, {
+      headers: { Authorization: 'Bearer ' + this.secret, 'X-Request-Timestamp': String(Math.floor(Date.now() / 1000)), Accept: 'application/json' },
+      signal,
+    });
+    // P1-16：8s 超时；仅 5xx 有限重试一次；429/4xx 不重试
+    let response: Response;
+    try {
+      response = await request(options.signal ?? AbortSignal.timeout(TIMEOUT_MS));
+    } catch (error) {
+      if ((error as Error).name === 'TimeoutError' || (error as Error).name === 'AbortError') throw new Error('UPSTREAM_TIMEOUT');
+      throw error;
+    }
+    if (response.status >= 500) {
+      await new Promise((resolve) => setTimeout(resolve, 600));
+      response = await request(AbortSignal.timeout(TIMEOUT_MS));
+    }
     if (response.status === 401 || response.status === 403) throw new Error('ZHIHU_AUTH_FAILED');
     if (response.status === 429) throw new Error('RATE_LIMITED');
     if (!response.ok) throw new Error('ZHIHU_HTTP_' + response.status);

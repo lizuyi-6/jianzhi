@@ -37,6 +37,8 @@ export const SourceDocumentSchema = z.object({
 export type SourceDocument = z.infer<typeof SourceDocumentSchema>;
 
 export const KnowledgeTypeSchema = z.enum(['EXPERIENCE', 'OUTCOME', 'REFLECTION', 'ANALYSIS', 'GENERAL_OPINION']);
+// P1-17：Decision 目前收敛在「本科毕业：直接工作 vs 继续读研」这一 career wedge 上。
+// 这是 MVP 的刻意取舍；长期愿景（任意高经验依赖问题）将切换为 Question-local position schema。
 export const DecisionSchema = z.object({
   value: z.enum(['WORK', 'GRAD_SCHOOL', 'CONDITIONAL', 'NO_CLEAR_DECISION']),
   evidence: EvidenceSpanSchema,
@@ -59,14 +61,25 @@ export const ExperienceRecordSchema = z.object({
 });
 export type ExperienceRecord = z.infer<typeof ExperienceRecordSchema>;
 
+// P0-06：每个分歧维度必须携带可回溯到原文的跨立场证据样例。
+export const SupportExampleSchema = z.object({
+  source_id: z.string().min(1),
+  value: z.string().min(1),
+  decision: z.string().min(1),
+  evidence_id: z.string().min(1),
+  quote: z.string().min(1),
+});
+export type SupportExample = z.infer<typeof SupportExampleSchema>;
+
 export const DiscussionDimensionSchema = z.object({
   id: z.string().min(1),
   label: z.string().min(1),
   semantic_family: z.string().min(1),
-  observed_values: z.array(z.string()).min(1),
+  observed_values: z.array(z.string()).min(2),
   supporting_sources: z.array(z.string()),
   counterexample_sources: z.array(z.string()),
   user_answerable: z.boolean(),
+  support_examples: z.array(SupportExampleSchema),
 });
 export const DiscussionLensSchema = z.object({
   schema_version: z.literal(schemaVersion),
@@ -90,6 +103,7 @@ export const ComparisonResultSchema = z.object({
   same: z.array(z.string()),
   different: z.array(z.string()),
   unknown: z.array(z.string()),
+  uncovered: z.array(z.string()),
   comparable_eligible: z.boolean(),
   explanation_facts: z.array(z.object({ type: z.enum(['SAME', 'DIFFERENT', 'UNKNOWN']), dimension: z.string(), source_evidence_id: z.string().min(1) })),
 });
@@ -115,9 +129,23 @@ export type ReadingSet = z.infer<typeof ReadingSetSchema>;
 export const RenderEvidenceSchema = z.object({
   evidence_id: z.string().min(1), source_id: z.string().min(1), quote: z.string().min(1), start: z.number().int().nonnegative(), end: z.number().int().positive(), field: z.string().min(1),
 });
+// P1-08：「不同」必须双边可见——用户值与 TA 值同时展示，并回到证据。
+export const DifferentFactSchema = z.object({
+  dimension: z.string().min(1),
+  user_value: z.string().min(1),
+  source_value: z.string().min(1),
+  evidence_id: z.string().min(1),
+});
+export const QualitySignalsSchema = z.object({
+  vote_count: z.number().int().nonnegative().nullable(),
+  comment_count: z.number().int().nonnegative().nullable(),
+  authority: z.union([z.string(), z.number()]).nullable(),
+});
 export const RenderCardSchema = z.object({
   role: z.enum(['COMPARABLE', 'COUNTER_EXPERIENCE', 'CLASSIC']), source_id: z.string().min(1), title: z.string().min(1), url: z.string().url(),
   same_dimensions: z.array(z.string()), different_dimensions: z.array(z.string()), unknown_dimensions: z.array(z.string()),
+  different_facts: z.array(DifferentFactSchema),
+  quality_signals: QualitySignalsSchema,
   why_read_codes: z.array(z.string()), evidence: z.array(RenderEvidenceSchema),
 });
 export const RenderPacketSchema = z.object({

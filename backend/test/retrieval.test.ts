@@ -12,7 +12,7 @@ const record = (id: string, goal: string, decision: 'WORK' | 'GRAD_SCHOOL'): Exp
   pre_decision_context: [{ dimension_id: 'career_goal', semantic_family: 'GOAL', value: goal, evidence: evidence(id + ':goal', '工程开发') }],
   outcomes: [], reflection: null, unknown_dimensions: [],
 });
-const lens: DiscussionLens = { schema_version: schemaVersion, question_key: 'q1', dimensions: [{ id: 'career_goal', label: '目标方向', semantic_family: 'GOAL', observed_values: ['ENGINEERING', 'RESEARCH'], supporting_sources: ['a', 'b'], counterexample_sources: ['b'], user_answerable: true }] };
+const lens: DiscussionLens = { schema_version: schemaVersion, question_key: 'q1', dimensions: [{ id: 'career_goal', label: '目标方向', semantic_family: 'GOAL', observed_values: ['ENGINEERING', 'RESEARCH'], supporting_sources: ['a', 'b'], counterexample_sources: ['b'], user_answerable: true, support_examples: [] }] };
 const context: CurrentDecisionContext = { schema_version: schemaVersion, question_key: 'q1', values: { career_goal: 'ENGINEERING' }, user_rejected_dimensions: [], custom_condition: null };
 const authority: Record<string, number> = { a: 3, b: 2, c: 4 };
 const sources: SourceDocument[] = ['a', 'b', 'c'].map((id, index) => ({ source_id: id, source_type: 'answer', question_title: 'q', author: {}, text, url: 'https://example.com/' + id, platform_signals: { authority: authority[id], vote_count: index }, source_mode: 'fixture' }));

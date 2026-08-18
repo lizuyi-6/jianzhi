@@ -5,13 +5,17 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "validate:data": "tsx src/scripts/validate-dataset.ts",
+    "build:golden": "tsx src/scripts/build-golden-cache.ts",
+    "extract": "tsx src/scripts/extract-experiences.ts",
+    "extract:replay": "tsx src/scripts/extract-experiences.ts --replay",
+    "eval": "tsx eval/run-eval.ts",
     "test": "node --import tsx --test test/**/*.test.ts",
     "dev": "node --env-file=../.env.local --import tsx --watch src/server.ts",
     "start": "node --env-file=../.env.local --import tsx src/server.ts",
     "import:annotations": "tsx src/scripts/import-annotations.ts",
     "build": "rm -rf dist && tsc -p tsconfig.build.json",
     "start:prod": "node dist/server.js",
-    "check": "npm run typecheck && npm run validate:data && npm test && npm run build"
+    "check": "npm run typecheck && npm run validate:data && npm run build:golden && npm run extract:replay && npm test && npm run build"
   },
   "dependencies": {
     "zod": "^3.23.8",

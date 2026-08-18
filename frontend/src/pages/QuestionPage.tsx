@@ -111,7 +111,9 @@ export default function QuestionPage() {
             {import.meta.env.DEV && (
               <button className="btn btn-ghost" type="button" title="仅开发模式可见" onClick={() => navigate('/reading-set')}>看阅读集（dev）</button>
             )}
-            <span className="question-stat">共 {meta?.source_count ?? '…'} 条来源内容</span>
+            <span className="question-stat">
+              共 {meta?.source_count ?? '…'} 条来源内容{meta ? ' · ' + meta.lens.experience_records + ' 条通过 Evidence 校验' : ''}
+            </span>
             <span className="provenance">来源：知乎官方搜索 API</span>
           </div>
           {error && <p className="inline-error">后端连接异常：{error.message}（{error.code}，请求 {error.requestId}）</p>}
@@ -121,10 +123,12 @@ export default function QuestionPage() {
         <section className="card feed-card">
           <div className="feed-tabs">
             <button className={sort === 'default' ? 'feed-tab active' : 'feed-tab'} onClick={() => setSort('default')}>默认排序</button>
-            <button className={sort === 'newest' ? 'feed-tab active' : 'feed-tab'} onClick={() => setSort('newest')}>最新回答</button>
+            {/* P1-12：这是官方搜索召回的跨问题内容，不是单一问题的回答流 */}
+            <button className={sort === 'newest' ? 'feed-tab active' : 'feed-tab'} onClick={() => setSort('newest')}>最新内容</button>
             <button className={sort === 'votes' ? 'feed-tab active' : 'feed-tab'} onClick={() => setSort('votes')}>最高赞同</button>
             <span className="feed-count">共 {total ?? sources.length} 条内容</span>
           </div>
+          <p className="feed-caption">相关真人内容 · 由官方搜索召回的跨问题回答与文章片段，不代表该问题下的全部回答。</p>
           {sorted.map((s) => {
             const date = formatDate(s.published_at);
             return (

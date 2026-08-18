@@ -1,4 +1,4 @@
-import type { ApiError, DiscussionLens, Meta, RenderPacket, SourceDocument } from './types';
+import type { ApiError, DiscussionLens, Meta, RenderPacket, SearchResponse, SourceDocument } from './types';
 
 export class ApiRequestError extends Error {
   readonly apiError: ApiError;
@@ -28,7 +28,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return body as T;
 }
 
-export const QUESTION_KEY = 'golden-read-work';
+export const QUESTION_KEY = 'golden-cs-offer-work-or-grad';
 
 export const api = {
   meta: () => request<Meta>('/api/v1/meta'),
@@ -37,7 +37,7 @@ export const api = {
   source: (sourceId: string) =>
     request<{ source: SourceDocument }>('/api/v1/sources/' + encodeURIComponent(sourceId)),
   search: (query: string, count = 10) =>
-    request<{ sources: SourceDocument[]; has_more: boolean; cached: boolean }>('/api/v1/search', {
+    request<SearchResponse>('/api/v1/search', {
       method: 'POST',
       body: JSON.stringify({ query, count }),
     }),
@@ -46,9 +46,15 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ question_key: questionKey }),
     }),
-  renderPacket: (values: Record<string, string>, questionKey = QUESTION_KEY) =>
+  renderPacket: (values: Record<string, string>, questionKey = QUESTION_KEY, userRejectedDimensions: string[] = [], customCondition: string | null = null) =>
     request<{ render_packet: RenderPacket }>('/api/v1/render-packet', {
       method: 'POST',
-      body: JSON.stringify({ question_key: questionKey, values }),
+      body: JSON.stringify({ question_key: questionKey, values, user_rejected_dimensions: userRejectedDimensions, custom_condition: customCondition }),
     }),
+  event: (event: string, payload: Record<string, unknown> = {}) => {
+    // P2-10：埋点尽力而为，失败不影响交互
+    try {
+      void fetch('/api/v1/events', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ event, payload }), keepalive: true }).catch(() => {});
+    } catch { /* ignore */ }
+  },
 };

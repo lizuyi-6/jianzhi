@@ -20,11 +20,13 @@ function slot(candidate: Candidate, role: 'COMPARABLE' | 'COUNTER_EXPERIENCE' | 
   return {
     role,
     source_id: candidate.record.source_id,
+    // P1-10：why_read 只声明算法真实使用的规则，不承诺未经证明的「结果与体会」。
     why_read: role === 'COMPARABLE'
       ? ['HAS_COMPARABLE_EXPERIENCE', 'EVIDENCE_BACKED_CONTEXT']
       : role === 'COUNTER_EXPERIENCE'
         ? ['SIMILAR_CONTEXT_DIFFERENT_DECISION', 'COUNTER_EXPERIENCE']
         : ['PUBLIC_QUALITY_COORDINATE'],
+    // P1-11：why_read 对应的证据 id 显式下发给 Renderer
     evidence_ids: candidate.comparison.explanation_facts.filter((fact) => fact.type !== 'UNKNOWN').map((fact) => fact.source_evidence_id),
   };
 }
@@ -44,6 +46,10 @@ export function retrieveReadingSet(records: ExperienceRecord[], sources: SourceD
   if (!selectedA) warnings.push('NO_COMPARABLE_EXPERIENCE');
   if (!selectedB) warnings.push('NO_COUNTER_EXPERIENCE');
   if (!selectedC) warnings.push('NO_CLASSIC_SOURCE');
+  // P1-05：用户条件只要出现「未覆盖」就显式告警，而不是静默当成差异
+  const uncovered = new Set<string>();
+  for (const item of candidates) for (const dimensionId of item.comparison.uncovered) uncovered.add(dimensionId);
+  if (uncovered.size > 0) warnings.push('USER_CONDITION_UNCOVERED');
   return {
     schema_version: schemaVersion,
     question_key: context.question_key,

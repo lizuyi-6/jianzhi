@@ -444,3 +444,46 @@ button { font-family: inherit; cursor: pointer; }
   border: 1px dashed var(--border); border-radius: 6px;
   padding: 5px 10px; margin: 0 0 14px; display: inline-block;
 }
+/* ===== P0/P1/P2 改造新增样式（追加到 styles.css 末尾） ===== */
+
+/* 抽屉：为什么这么说 —— 跨立场证据（P0-06） */
+.why-detail-line { margin: 0 0 8px; font-size: 12px; line-height: 1.7; color: var(--text-2, #6b7280); }
+.why-examples { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.example-item { display: flex; flex-direction: column; gap: 3px; padding: 8px 10px; border: 1px solid var(--line-2, #e5e7eb); border-radius: 10px; background: var(--bg-2, #f9fafb); }
+.example-quote { all: unset; cursor: pointer; font-size: 12px; line-height: 1.7; color: var(--text-1, #111827); }
+.example-quote:hover { color: #6d5ae0; }
+.example-meta { font-size: 11px; color: var(--text-3, #9ca3af); }
+
+/* F-005 三态按钮（P1-04） */
+.pill-muted { color: var(--text-3, #6b7280); border-style: dashed; }
+.pill-rejected { background: #fef2f2 !important; color: #b91c1c !important; border-color: #fecaca !important; }
+
+/* 自定义补充条件 */
+.custom-condition { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+.custom-condition-label { font-size: 12px; color: var(--text-2, #6b7280); }
+.custom-condition-input { width: 100%; box-sizing: border-box; border: 1px solid var(--line-2, #e5e7eb); border-radius: 10px; padding: 8px 10px; font-size: 13px; font-family: inherit; resize: vertical; background: var(--bg-1, #fff); color: var(--text-1, #111827); }
+.custom-condition-input:focus { outline: 2px solid #6d5ae055; border-color: #6d5ae0; }
+
+/* ReadingSet 变化解释卡（P0-08 / F-009） */
+.change-card { border: 1px solid #ede9fe; background: linear-gradient(180deg, #faf8ff, #fff); }
+.change-title { display: flex; align-items: center; gap: 8px; font-size: 15px; margin: 0 0 12px; color: #5b4a9e; }
+.change-row { display: flex; gap: 10px; padding: 8px 0; border-top: 1px dashed var(--line-2, #e5e7eb); }
+.change-role { flex: none; font-size: 12px; font-weight: 600; color: #5b4a9e; background: #f1edfd; border-radius: 999px; padding: 2px 10px; height: fit-content; }
+.change-body { min-width: 0; }
+.change-main { margin: 0; font-size: 13px; font-weight: 600; }
+.change-reasons { margin: 2px 0 0; font-size: 12px; line-height: 1.7; color: var(--text-2, #6b7280); }
+.change-note { margin: 10px 0 0; font-size: 11px; color: var(--text-3, #9ca3af); }
+
+/* 条件 chips 的弱化态 */
+.chip-muted { color: var(--text-3, #9ca3af); background: var(--bg-2, #f3f4f6); }
+
+/* C 位公共质量信号（P1-09） */
+.quality-line { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0 0; font-size: 11px; color: var(--text-2, #6b7280); }
+.quality-hint { color: var(--text-3, #9ca3af); }
+
+/* 信息流说明文案（P1-12 / P2-06） */
+.feed-caption { margin: 2px 0 12px; font-size: 12px; color: var(--text-3, #9ca3af); }
+.feed-more-hint { margin: 8px 0 4px; font-size: 12px; color: var(--text-3, #9ca3af); }
+
+/* 抽屉可访问性焦点（P2-09） */
+.drawer:focus-visible { outline: 2px solid #6d5ae0; outline-offset: -2px; }

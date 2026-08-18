@@ -7,11 +7,12 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
+    "check:labels": "node e2e/labels-check.cjs",
     "verify": "node e2e/verify.cjs",
     "verify:interactions": "node e2e/interactions.cjs",
-    "verify:all": "npm run verify && npm run verify:interactions",
+    "verify:all": "npm run check:labels && npm run verify && npm run verify:interactions",
     "verify:prod": "PROD=1 FRONTEND_URL=http://localhost:4173 node e2e/verify.cjs",
-    "release:gate": "npm run build && node e2e/release-gate.cjs"
+    "release:gate": "npm run build && npm run check:labels && node e2e/release-gate.cjs"
   },
   "dependencies": {
     "react": "^18.3.1",

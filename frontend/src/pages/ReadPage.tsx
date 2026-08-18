@@ -4,6 +4,7 @@ import { api } from '../api/client';
 import type { EvidenceSpan, RenderCard, SourceDocument } from '../api/types';
 import { useApp } from '../state/AppContext';
 import { dimensionLabel, valueLabel, whyReadLabel } from '../i18n/labels';
+import { factLine } from '../lens/diff';
 import LensDrawer from '../components/LensDrawer';
 import { showToast } from '../components/Toast';
 import { getPrefsVersion, isCollected, recordHistory, subscribePrefs, toggleCollection } from '../state/prefs';
@@ -175,13 +176,14 @@ export default function ReadPage() {
             </div>
           )}
 
-          {card && card.different_dimensions.length > 0 && (
+          {/* P1-08：双边差异展示 */}
+          {card && card.different_facts.length > 0 && (
             <div className="why-section">
               <h4>与你不同</h4>
-              {card.different_dimensions.map((id) => (
-                <p key={id} className="why-line why-diff">
+              {card.different_facts.map((fact) => (
+                <p key={fact.dimension} className="why-line why-diff">
                   <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3v18M5 8l7-5 7 5"/></svg>
-                  {dimName(id)}
+                  {factLine(fact)}
                 </p>
               ))}
             </div>
@@ -203,7 +205,13 @@ export default function ReadPage() {
             <div className="why-section">
               <h4>来源依据</h4>
               {anchored.map((e) => (
-                <a key={e.evidence_id} className={'evidence-item' + (e.valid ? '' : ' invalid')} href={'#ev-' + e.index} id={'evidence-' + e.index}>
+                <a
+                  key={e.evidence_id}
+                  className={'evidence-item' + (e.valid ? '' : ' invalid')}
+                  href={'#ev-' + e.index}
+                  id={'evidence-' + e.index}
+                  onClick={() => api.event('evidence_open', { evidence_id: e.evidence_id, source_id: e.source_id, field: e.field })}
+                >
                   <span className="evidence-index">[{e.index}]</span>
                   <span className="evidence-quote">{e.quote}</span>
                   <span className="evidence-field">{dimensionLabel(e.field)}{e.valid ? '' : ' · 引用与当前来源片段位置不符'}</span>
@@ -213,7 +221,7 @@ export default function ReadPage() {
           )}
 
           {card && (
-            <a className="why-origin" href={card.url} target="_blank" rel="noreferrer">
+            <a className="why-origin" href={card.url} target="_blank" rel="noreferrer" onClick={() => api.event('source_open', { source_id: card.source_id })}>
               {source?.source_type === 'article' ? '查看原文' : '查看原回答'}
               <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 6 6 6-6 6"/></svg>
             </a>

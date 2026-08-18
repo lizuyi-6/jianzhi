@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import type { RenderCard, Role, SourceDocument } from '../api/types';
 import { useApp } from '../state/AppContext';
-import { dimensionLabel, valueLabel, whyReadLabel, warningLabel, ROLE_META } from '../i18n/labels';
+import { dimensionLabel, valueLabel, whyReadLabel, warningLabel, authorityLabel, ROLE_META } from '../i18n/labels';
+import { factLine } from '../lens/diff';
 import LensCard from '../components/LensCard';
 import LensDrawer from '../components/LensDrawer';
 import { QUESTION_TITLE } from '../content';
@@ -16,17 +17,61 @@ function excerpt(text: string, len = 60): string {
 }
 
 function ConditionChips() {
-  const { conditions, lens } = useApp();
+  const { conditions, rejectedDimensions, customCondition, lens } = useApp();
   const entries = Object.entries(conditions);
+  const rejected = rejectedDimensions.filter((id) => !entries.some(([key]) => key === id));
   return (
     <div className="cond-chips">
       <span className="cond-chips-label">你的情况</span>
-      {entries.length === 0 && <span className="cond-chips-empty">尚未选择条件</span>}
+      {entries.length === 0 && rejected.length === 0 && !customCondition && <span className="cond-chips-empty">尚未选择条件</span>}
       {entries.map(([dimId, v]) => {
         const dim = lens?.dimensions.find((d) => d.id === dimId);
         return <span key={dimId} className="chip">{dimensionLabel(dimId, dim?.label)} · {valueLabel(v)}</span>;
       })}
+      {rejected.map((dimId) => (
+        <span key={dimId} className="chip chip-muted">{dimensionLabel(dimId)} · 不适用</span>
+      ))}
+      {customCondition && <span className="chip chip-muted">补充：{customCondition.slice(0, 24)}{customCondition.length > 24 ? '…' : ''}</span>}
     </div>
+  );
+}
+
+// P0-08 / F-009：修改条件后的 ReadingSet 变化必须可见、可解释
+function ChangeReportCard() {
+  const { changeReport } = useApp();
+  if (!changeReport || !changeReport.hasChanges) return null;
+  const changed = changeReport.changes.filter((item) => item.changed);
+  return (
+    <section className="card change-card" data-testid="change-report">
+      <h3 className="change-title">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 3v6h6"/></svg>
+        条件变化如何改变了阅读集（{changed.length} 处）
+      </h3>
+      {changed.map((item) => (
+        <div key={item.role} className="change-row" data-role={item.role}>
+          <span className="change-role">{item.roleLabel}</span>
+          <div className="change-body">
+            <p className="change-main">{item.emptied ? '该视角为空' : item.newlyFilled ? '该视角从空位补齐' : '更换了来源'}{item.previousSourceId && item.nextSourceId ? '' : ''}</p>
+            {item.reasons.length > 0 && <p className="change-reasons">{item.reasons.join('；')}</p>}
+          </div>
+        </div>
+      ))}
+      <p className="change-note">排序规则：相同条件多者优先 → 差异少者优先 → 公共质量信号。以上每条变化都可回到证据逐条验证。</p>
+    </section>
+  );
+}
+
+function QualityLine({ card }: { card: RenderCard }) {
+  const { quality_signals: signals } = card;
+  const authority = authorityLabel(signals.authority);
+  return (
+    <p className="quality-line">
+      公共质量信号：
+      {typeof signals.vote_count === 'number' && <span>▲ {signals.vote_count} 赞同</span>}
+      {typeof signals.comment_count === 'number' && <span>{signals.comment_count} 条评论</span>}
+      {authority && <span>{authority}</span>}
+      <span className="quality-hint">C 位按此排序挑选</span>
+    </p>
   );
 }
 
@@ -38,7 +83,7 @@ function RoleCard({ card, source }: { card: RenderCard; source: SourceDocument |
   const dimName = (id: string) => dimensionLabel(id, lens?.dimensions.find((d) => d.id === id)?.label);
 
   return (
-    <article className={'role-card role-' + meta.accent} onClick={() => navigate('/read/' + card.role)}>
+    <article className={'role-card role-' + meta.accent} data-slot-source={card.source_id} onClick={() => navigate('/read/' + card.role)}>
       <header className="role-head">
         <span className="role-badge">{meta.letter}</span>
         <span className="role-name">{meta.name}</span>
@@ -73,10 +118,11 @@ function RoleCard({ card, source }: { card: RenderCard; source: SourceDocument |
             <span className="cmp-text">「{decisionEvidence.quote}」</span>
           </div>
         )}
-        {card.different_dimensions.length > 0 && (
+        {/* P1-08：差异双边可见——你和 TA 各自是什么 */}
+        {card.different_facts.length > 0 && (
           <div className="cmp-row">
             <span className="cmp-tag cmp-diff">不同</span>
-            <span className="cmp-text">{card.different_dimensions.map(dimName).join('、')}</span>
+            <span className="cmp-text">{card.different_facts.map((fact) => factLine(fact)).join('；')}</span>
           </div>
         )}
         {card.unknown_dimensions.length > 0 && (
@@ -97,6 +143,7 @@ function RoleCard({ card, source }: { card: RenderCard; source: SourceDocument |
             </li>
           ))}
         </ul>
+        {card.role === 'CLASSIC' && <QualityLine card={card} />}
       </div>
 
       <a className="btn role-open" href={card.url} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>
@@ -180,6 +227,8 @@ export default function ReadingSetPage() {
           </section>
         )}
 
+        <ChangeReportCard />
+
         <section className="reading-set">
           <div className="reading-set-head">
             <h2>
@@ -191,7 +240,7 @@ export default function ReadingSetPage() {
               三篇分别承担不同角色，没有先后顺序
             </span>
           </div>
-          <p className="reading-set-sub">不是给你一个答案，而是先帮你找到更值得读的真人经验。</p>
+          <p className="reading-set-sub">不是给你一个答案，而是基于你的条件构造可比较、反向和经典三类视角。</p>
 
           {packetLoading && <p className="feed-empty">正在基于你的条件生成阅读集…</p>}
 
@@ -212,8 +261,9 @@ export default function ReadingSetPage() {
         <section className="card rail-card">
           <h3 className="rail-title">数据说明</h3>
           <p className="rail-text">
-            内容来自知乎官方搜索 API（official_api_search），共 {meta?.source_count ?? '…'} 条来源。
-            阅读集只从通过 Evidence 校验的经验记录中选取，B 位允许为空。
+            内容来自知乎官方搜索 API（official_api_search），共 {meta?.source_count ?? '…'} 条来源；
+            其中 {meta?.lens.experience_records ?? '…'} 条通过 Evidence 校验进入透镜（同一决策阶段：本科毕业季的工作 vs 读研）。
+            阅读集只从通过校验的经验记录中选取，B 位允许为空。
           </p>
         </section>
       </div>
