@@ -36,13 +36,7 @@ jobs:
       - run: npx playwright install chromium --with-deps
       - run: npm run build
       - run: npm run check:labels
-      - name: Start backend for E2E
-        run: |
-          cd ../backend
-          nohup node --import tsx src/server.ts > /tmp/backend.log 2>&1 &
-          sleep 6
-      - run: npm run verify:prod
-        env:
-          FRONTEND_URL: http://localhost:4173
-      - name: Release gate (self-started preview)
+      # release:gate 完全自含：自起 backend（动态端口）+ preview（strictPort）跑生产 Golden Flow，
+      # 不依赖任何已在运行的服务 —— 无需也不允许先手动起 backend/preview
+      - name: Release gate (self-started backend + preview)
         run: npm run release:gate

@@ -9,7 +9,7 @@
     "extract": "tsx src/scripts/extract-experiences.ts",
     "extract:replay": "tsx src/scripts/extract-experiences.ts --replay",
     "eval": "tsx eval/run-eval.ts",
-    "test": "node --import tsx --test test/**/*.test.ts",
+    "test": "node --import tsx --test test/*.test.ts",
     "dev": "node --env-file=../.env.local --import tsx --watch src/server.ts",
     "start": "node --env-file=../.env.local --import tsx src/server.ts",
     "import:annotations": "tsx src/scripts/import-annotations.ts",
