@@ -43,7 +43,7 @@ function ChangeReportCard() {
     <section className="card change-card judge-change-card" data-testid="change-report">
       <div className="judge-step-badge">STEP 2 · 条件一变，值得先听的人也会变</div>
       <h3 className="change-title judge-change-title">
-        你只改了条件，阅读集就换了 {changed.length} 席
+        条件变化如何改变了阅读集：这次换了 {changed.length} 席
       </h3>
       <p className="judge-change-lead">这就是知鉴和“生成一个统一答案”的区别：它保留条件，并让阅读顺序跟着条件变化。</p>
       {changed.map((item) => (
