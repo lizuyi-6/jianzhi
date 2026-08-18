@@ -28,6 +28,11 @@ function run(cmd, args, env) {
   });
 }
 
+function killPreview(preview) {
+  if (!preview) return;
+  try { process.kill(-preview.pid, 'SIGTERM'); } catch { preview.kill('SIGTERM'); }
+}
+
 (async () => {
   const alreadyRunning = await reachable(PREVIEW_URL);
   let preview = null;
@@ -43,23 +48,26 @@ function run(cmd, args, env) {
     const ok = await waitFor(PREVIEW_URL);
     if (!ok) {
       console.error('[release-gate] preview 启动超时');
-      try { process.kill(-preview.pid, 'SIGTERM'); } catch { preview.kill('SIGTERM'); }
+      killPreview(preview);
       process.exit(2);
     }
   }
 
+  // 注意：不在 try 内 process.exit()——它会绕过 finally 的清理，
+  // 失败路径同样必须走完 killPreview 再退出。
+  let exitCode = 0;
   try {
     console.log('[release-gate] 对生产构建执行 Golden Flow …');
-    const code = await run('node', ['e2e/verify.cjs'], { PROD: '1', FRONTEND_URL: PREVIEW_URL });
+    const code = await run(process.execPath, ['e2e/verify.cjs'], { PROD: '1', FRONTEND_URL: PREVIEW_URL });
     if (code !== 0) {
       console.error('[release-gate] FAIL：生产 Golden Flow 未通过');
-      process.exit(code);
+      exitCode = code;
+    } else {
+      console.log('[release-gate] PASS：生产构建通过发布门禁');
     }
-    console.log('[release-gate] PASS：生产构建通过发布门禁');
   } finally {
-    if (preview) {
-      try { process.kill(-preview.pid, 'SIGTERM'); } catch { preview.kill('SIGTERM'); }
-      await new Promise((r) => setTimeout(r, 800));
-    }
+    killPreview(preview);
+    await new Promise((r) => setTimeout(r, 800));
   }
+  process.exitCode = exitCode;
 })().catch((e) => { console.error('[release-gate] FATAL', e.message); process.exit(1); });
